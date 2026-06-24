@@ -121,6 +121,13 @@ fkstring *s = fkstrnew("Demotion");
 fkremove(s, 3, 3); /* "Demotion" -> "Demon" */
 ```
 
+#### `size_t fkltrim(fkstring *fks);`
+#### `size_t fkrtrim(fkstring *fks);`
+#### `size_t fktrim(fkstring *fks);`
+Remove whitespace (the regex `\s` class: space, `\t`, `\n`, `\r`, `\f`, `\v`)
+from the left, right, or both ends of `fks` in place. Returns the new
+length (0 if `fks` is `NULL`).
+
 ### Deriving new strings
 
 #### `fkstring *fksubstr(const fkstring *fstr, size_t start, size_t len);`

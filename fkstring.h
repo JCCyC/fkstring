@@ -27,6 +27,9 @@ fkstring *fkstrcatone(fkstring *dst, char c);
 fkstring *fksubstr(const fkstring *fstr, size_t start, size_t len);
 fkstring *fkstrtrunc(fkstring *fks, size_t newlen);
 size_t fkremove(fkstring *fstr, size_t start, size_t len);
+size_t fkltrim(fkstring *fks);
+size_t fkrtrim(fkstring *fks);
+size_t fktrim(fkstring *fks);
 
 /* fkstdio.c */
 fkstring *fksprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));

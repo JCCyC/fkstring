@@ -230,6 +230,53 @@ size_t fkremove(fkstring *fstr, size_t start, size_t len)
 	return len;
 }
 
+/* Matches the \s character class from regular expressions, not the
+ * locale-dependent isspace(). */
+static int isfkspace(char c)
+{
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';
+}
+
+size_t fkltrim(fkstring *fks)
+{
+	size_t count;
+
+	if (!fks)
+		return 0;
+
+	count = 0;
+	while (count < fks->len && isfkspace(fks->cstr[count]))
+		count++;
+
+	fkremove(fks, 0, count);
+	return fks->len;
+}
+
+size_t fkrtrim(fkstring *fks)
+{
+	size_t newlen;
+
+	if (!fks)
+		return 0;
+
+	newlen = fks->len;
+	while (newlen > 0 && isfkspace(fks->cstr[newlen - 1]))
+		newlen--;
+
+	fkstrtrunc(fks, newlen);
+	return fks->len;
+}
+
+size_t fktrim(fkstring *fks)
+{
+	if (!fks)
+		return 0;
+
+	fkrtrim(fks);
+	fkltrim(fks);
+	return fks->len;
+}
+
 fkstring *fksubstr(const fkstring *fstr, size_t start, size_t len)
 {
 	size_t		newalloc;

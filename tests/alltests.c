@@ -10,6 +10,7 @@ extern test_suite fkstrtrunc_suite;
 extern test_suite fkstrcat_suite;
 extern test_suite fksubstr_suite;
 extern test_suite fkremove_suite;
+extern test_suite fktrim_suite;
 extern test_suite fksprintf_suite;
 extern test_suite fkstrwrite_suite;
 extern test_suite fkstrread_suite;
@@ -24,6 +25,7 @@ int main(void)
 		fksubstr_suite,
 		fkstrtrunc_suite,
 		fkremove_suite,
+		fktrim_suite,
 		allocforlen_suite,
 		fkpanic_suite,
 		fkstrerr_suite,
