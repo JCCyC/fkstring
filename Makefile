@@ -26,6 +26,13 @@ fkstrerr.o: fkstrerr.c fkstring.h fkstring_internal.h Makefile
 
 clean:
 	rm -f smoketest libfkstring.a *.o *.so
+	$(MAKE) -C tests clean
+
+check: libfkstring.a
+	$(MAKE) -C tests
+	./tests/alltests
+
+test: check
 
 install: libfkstring.a libfkstring.so
 	install -o root -g root -m 755 libfkstring.a libfkstring.so $(PREFIX)/lib

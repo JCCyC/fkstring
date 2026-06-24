@@ -66,9 +66,19 @@ fkstring *fksprintf(const char *fmt, ...)
 			fkpanic(FKSTRERR_VSNPRINTF);
 	}
 
-	newfkstr->alloc = myalloc;
-	newfkstr->len = mylen;
-	newfkstr->cstr = mycstr;
+	if (mylen == 0)
+	{
+		free(mycstr);
+		newfkstr->len = 0;
+		newfkstr->alloc = 0;
+		newfkstr->cstr = NULL;
+	}
+	else
+	{
+		newfkstr->alloc = myalloc;
+		newfkstr->len = mylen;
+		newfkstr->cstr = mycstr;
+	}
 	return newfkstr;
 }
 
@@ -109,6 +119,7 @@ fkstring *fkstrread(int fd, size_t count)
 		free(newfkstr->cstr);
 		newfkstr->cstr = NULL;
 		newfkstr->len = 0;
+		newfkstr->alloc = 0;
 	}
 	else
 	{

@@ -12,20 +12,43 @@ LGPL-2.1 licensed.
 
 ## Commands
 
-- Build everything (`libfkstring.a`, `libfkstring.so`, `test`): `make`
+- Build everything (`libfkstring.a`, `libfkstring.so`, `smoketest`): `make`
 - Clean build artifacts: `make clean`
 - Install system-wide: `make install` — requires root (the Makefile runs
   `install -o root -g root`); installs to `$(PREFIX)/lib` and
   `$(PREFIX)/include`, where `PREFIX` defaults to `/usr/local` (edit the
   `Makefile` to change it).
 - Compile a single translation unit directly, e.g.: `gcc -I. -Wall -fpic -c fkstring.c -o fkstring.o`
+- Run the automated test suite: `make check` (alias: `make test`) — builds
+  `libfkstring.a`, then builds and runs `tests/alltests`. Exits nonzero if
+  any test fails, so `make check` itself reports an error in that case.
 
-There is no automated test suite or assertion framework. `test.c` is a
-manual smoke-test/demo program: it runs a sequence of operations and prints
-the resulting `len`/`alloc`/contents after each one via the local `fkshow()`
-helper. To validate a change, build and run `./test` and visually diff the
-output against a known-good run (e.g. `git stash` the change, capture
-output, restore, compare).
+`tests/alltests` is a from-scratch assertion-based suite (no external test
+framework) living in `tests/`: one `test_<fn>.c` file per `fkstring.c`/
+`fkstdio.c`/`fkstrerr.c` function (or closely related group of functions,
+e.g. `test_fkstrcat.c` covers `fkstrcat`/`fkstrcatc`/`fkstrcatone`), each
+exposing a `test_suite` of `{ description, test_fn }` cases built with the
+`CHECK()` macro from `tests/framework.h`. `tests/alltests.c` collects all
+suites and `tests/framework.c`'s `run_suites()` prints `#N (description)...`
+(unbuffered, so the cursor visibly sits there during a slow test) followed
+by `PASS` or `FAIL - <reason>`. It deliberately does **not** test
+`smoketest.c`, which remains the manual demo program described below.
+
+`fksprintf("")` and `fkstrread()` at EOF/with `count==0` are also asserted
+against the `fkstring.h` len==0 invariant (`alloc == 0` whenever `len == 0`)
+— both code paths originally left a stale nonzero `alloc` behind despite
+freeing/NULLing `cstr`, which `fksprintf()`'s and `fkstrread()`'s
+`bytesread == 0` handling now correct explicitly. `tests/test_fkpanic.c`
+tests `fkpanic()` (which calls `exit(253)`) by forking and inspecting the
+child's exit status/stderr, since calling it in-process would kill the
+whole test run.
+
+`smoketest.c` (built via `make`, not `make check`) is a separate manual
+smoke-test/demo program: it runs a sequence of operations and prints the
+resulting `len`/`alloc`/contents after each one via the local `fkshow()`
+helper. To eyeball a change interactively, build and run `./smoketest` and
+visually diff the output against a known-good run (e.g. `git stash` the
+change, capture output, restore, compare).
 
 ## Architecture
 
