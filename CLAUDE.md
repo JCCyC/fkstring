@@ -65,9 +65,12 @@ below are easy to miss):
 - `fkstring.c` — core operations: construction (`fkstrnew`, `fkstrnewb`),
   destruction, duplication, concatenation (`fkstrcat`/`fkstrcatc`/
   `fkstrcatone`, all funneling through the static `fkstrcat_internal`),
-  truncation, `fksubstr`, `fkremove`, and trimming (`fkltrim`/`fkrtrim`/
+  truncation, `fksubstr`, `fkremove`, trimming (`fkltrim`/`fkrtrim`/
   `fktrim`, which funnel through `fkremove`/`fkstrtrunc` rather than
-  duplicating the shift/truncate logic).
+  duplicating the shift/truncate logic), and `fksplit`/`fkarraydestroy`
+  (the only functions dealing in `fkstring **` arrays — `fksplit` builds
+  each part via `fksubstr` and NULL-terminates the array; `fkarraydestroy`
+  is its matching destructor, walking to that NULL terminator).
 - `fkstdio.c` — I/O-adjacent constructors: `fksprintf`, `fkstrwrite`,
   `fkstrread`.
 - `fkstrerr.c` — the `errmsgs[]` string table indexed by `FKSTRERR_*`.

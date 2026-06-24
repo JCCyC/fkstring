@@ -308,3 +308,49 @@ fkstring *fksubstr(const fkstring *fstr, size_t start, size_t len)
 
 	return newfkstr;
 }
+
+fkstring **fksplit(const fkstring *src, char delim)
+{
+	size_t		nparts, i, start, partidx;
+	fkstring	**result;
+
+	if (!src)
+		return NULL;
+
+	nparts = 1;
+	for (i = 0; i < src->len; i++)
+		if (src->cstr[i] == delim)
+			nparts++;
+
+	result = malloc((nparts + 1) * sizeof(fkstring *));
+	if (!result)
+		fkpanic(FKSTRERR_MEMALLOC);
+
+	start = 0;
+	partidx = 0;
+	for (i = 0; i < src->len; i++)
+	{
+		if (src->cstr[i] == delim)
+		{
+			result[partidx++] = fksubstr(src, start, i - start);
+			start = i + 1;
+		}
+	}
+	result[partidx++] = fksubstr(src, start, src->len - start);
+	result[partidx] = NULL;
+
+	return result;
+}
+
+void fkarraydestroy(fkstring **fka)
+{
+	size_t i;
+
+	if (!fka)
+		return;
+
+	for (i = 0; fka[i]; i++)
+		fkstrdestroy(fka[i]);
+
+	free(fka);
+}

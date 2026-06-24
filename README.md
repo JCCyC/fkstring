@@ -95,6 +95,10 @@ Creates a new `fkstring` as a copy of `fks`.
 Deallocates `fks` and its buffer. As with `free()`, the pointer is invalid
 after this call. Safe to call with `NULL`.
 
+#### `void fkarraydestroy(fkstring **fka);`
+Deallocates every `fkstring` in the NULL-terminated array `fka` (as returned
+by `fksplit()`), then the array itself. Safe to call with `NULL`.
+
 ### Modifying in place
 
 #### `fkstring *fkstrcat(fkstring *dst, const fkstring *src);`
@@ -134,6 +138,18 @@ length (0 if `fks` is `NULL`).
 Returns a new `fkstring` containing up to `len` bytes of `fstr` starting at
 byte offset `start`. Returns an empty `fkstring` if `start` is out of range
 or `len` is 0, and `NULL` if `fstr` is `NULL`.
+
+#### `fkstring **fksplit(const fkstring *src, char delim);`
+Splits `src` on every occurrence of the byte `delim`, returning a
+NULL-terminated array of newly allocated `fkstring`s (free with
+`fkarraydestroy()`). An empty `src` yields a single-element array holding
+one empty `fkstring`. Returns `NULL` if `src` is `NULL`.
+
+```c
+fkstring *s = fkstrnew("a,b,c");
+fkstring **parts = fksplit(s, ','); /* {"a", "b", "c", NULL} */
+fkarraydestroy(parts);
+```
 
 #### `fkstring *fksprintf(const char *fmt, ...);`
 Creates a new `fkstring` formatted using `printf()` semantics.

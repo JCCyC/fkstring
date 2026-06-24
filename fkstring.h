@@ -30,6 +30,8 @@ size_t fkremove(fkstring *fstr, size_t start, size_t len);
 size_t fkltrim(fkstring *fks);
 size_t fkrtrim(fkstring *fks);
 size_t fktrim(fkstring *fks);
+fkstring **fksplit(const fkstring *src, char delim);
+void fkarraydestroy(fkstring **fka);
 
 /* fkstdio.c */
 fkstring *fksprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
