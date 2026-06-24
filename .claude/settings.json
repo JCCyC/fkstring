@@ -3,9 +3,15 @@
     "allow": [
       "Bash(make)",
       "Bash(make clean *)",
-      "Bash(./test)",
-      "Bash(git check-ignore *)",
+      "Bash(make check *)",
+      "Bash(make -C tests)",
+      "Bash(git status *)",
       "Bash(git add *)",
+      "Bash(git mv *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git check-ignore *)",
+      "Bash(./smoketest)",
+      "Bash(./tests/alltests)",
       "Skill(update-config)",
       "Skill(update-config:*)"
     ]
