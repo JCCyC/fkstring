@@ -1,6 +1,6 @@
 # fkstring
 
-F\*\*ed Strings — a small C string library, inspired by
+F\*\*\*ed Strings — a small C string library, inspired by
 ["Back to Basics"](https://www.joelonsoftware.com/2001/12/11/back-to-basics/).
 
 `fkstring` is a length-tracked, growable string buffer for C. It avoids the
