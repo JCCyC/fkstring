@@ -5,9 +5,10 @@
 #include <fkstring.h>
 #include <fkstring_internal.h>
 
-static char *make_message(int *len, int *alloc, const char *fmt, va_list ap)
+static char *make_message(size_t *len, size_t *alloc, const char *fmt, va_list ap)
 {
-	int n, size;
+	int n;
+	size_t size;
 	char *p;
 
 	/* Try with size given to us */
@@ -20,16 +21,16 @@ static char *make_message(int *len, int *alloc, const char *fmt, va_list ap)
 	n = vsnprintf(p, size, fmt, ap);
 
 	/* If that worked, return the string. */
-	if (n > -1 && n < size)
+	if (n > -1 && (size_t)n < size)
 	{
-		*len = n;
+		*len = (size_t)n;
 		*alloc = size;
 		return p;
 	}
 
 	/* Else try again with more space. */
 	if (n > -1)
-		size = n + 1;	/* glibc 2.1 - precisely what is needed */
+		size = (size_t)n + 1;	/* glibc 2.1 - precisely what is needed */
 	else
 		size *= 10;	/* glibc 2.0 - ten times the old size */
 
@@ -41,7 +42,7 @@ static char *make_message(int *len, int *alloc, const char *fmt, va_list ap)
 
 fkstring *fksprintf(const char *fmt, ...)
 {
-	int		mylen, myalloc;
+	size_t		mylen, myalloc;
 	char		*mycstr;
 	fkstring	*newfkstr;
 	va_list		ap;
@@ -71,7 +72,7 @@ fkstring *fksprintf(const char *fmt, ...)
 	return newfkstr;
 }
 
-ssize_t fkstrwrite(int fd, fkstring *fks)
+ssize_t fkstrwrite(int fd, const fkstring *fks)
 {
 	if (!fks || fks->len == 0)
 		return write(fd, "", 0);
@@ -112,7 +113,7 @@ fkstring *fkstrread(int fd, size_t count)
 	else
 	{
 		newfkstr->cstr[bytesread] = '\0';
-		newfkstr->len = bytesread;
+		newfkstr->len = (size_t)bytesread;
 	}
 	return newfkstr;
 }

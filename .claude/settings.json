@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make)",
+      "Bash(make clean *)",
+      "Bash(./test)",
+      "Bash(git check-ignore *)",
+      "Bash(git add *)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ]
+  }
+}

@@ -10,7 +10,7 @@ void fkshow(fkstring *fks)
 		printf("Null fkstr\n");
 	else
 	{
-		printf("Len = %3d, Alloc = %3d, Str = '", fkstrlen(fks), fkstrsize(fks));
+		printf("Len = %3zu, Alloc = %3zu, Str = '", fkstrlen(fks), fkstrsize(fks));
 		fflush(stdout);
 		fkstrwrite(1, fks);
 		write(1, "'\n", 2);

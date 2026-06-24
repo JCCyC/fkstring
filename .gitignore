@@ -53,3 +53,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Claude Code local/personal settings (machine-specific permissions)
+.claude/settings.local.json

@@ -6,8 +6,8 @@
 
 int _bumpfactor = FKSTR_DEFAULT_BUMPFACTOR;
 int _deflatefactor = FKSTR_DEFAULT_DEFLATEFACTOR;
-int _minalloc = FKSTR_DEFAULT_MIN_ALLOC;
-int _sprintftry = FKSTR_DEFAULT_SPRINTF_TRY;
+size_t _minalloc = FKSTR_DEFAULT_MIN_ALLOC;
+size_t _sprintftry = FKSTR_DEFAULT_SPRINTF_TRY;
 
 void fkpanic(int cause)
 {
@@ -16,9 +16,9 @@ void fkpanic(int cause)
 	exit(253);
 }
 
-int allocforlen(int len)
+size_t allocforlen(size_t len)
 {
-	int proposed = (len * _bumpfactor / 100) + 1;
+	size_t proposed = (len * _bumpfactor / 100) + 1;
 
 	if (proposed < _minalloc)
 		proposed = _minalloc;
@@ -37,7 +37,7 @@ void fkstrdestroy(fkstring *fks)
 
 fkstring *fkstrnew(const char *s)
 {
-	int		newlen, newalloc;
+	size_t		newlen, newalloc;
 	fkstring	*newfkstr;
 
 	newfkstr = malloc(sizeof(fkstring));
@@ -67,9 +67,41 @@ fkstring *fkstrnew(const char *s)
 	return newfkstr;
 }
 
-fkstring *fkstrtrunc(fkstring *fks, int newlen)
+fkstring *fkstrnewb(const void *buf, size_t len)
 {
-	if ((!fks) || (newlen < 0))
+	size_t		newalloc;
+	fkstring	*newfkstr;
+
+	newfkstr = malloc(sizeof(fkstring));
+	if (!newfkstr)
+		fkpanic(FKSTRERR_MEMALLOC);
+
+	if (buf && len)
+	{
+		newalloc = allocforlen(len);
+
+		newfkstr->cstr = malloc(newalloc);
+		if (!newfkstr->cstr)
+			fkpanic(FKSTRERR_MEMALLOC);
+
+		memcpy(newfkstr->cstr, buf, len);
+		newfkstr->cstr[len] = '\0';
+		newfkstr->len = len;
+		newfkstr->alloc = newalloc;
+	}
+	else
+	{
+		newfkstr->len = 0;
+		newfkstr->alloc = 0;
+		newfkstr->cstr = NULL;
+	}
+
+	return newfkstr;
+}
+
+fkstring *fkstrtrunc(fkstring *fks, size_t newlen)
+{
+	if (!fks)
 		return NULL;
 
 	if (fks->len == 0)
@@ -100,16 +132,16 @@ fkstring *fkstrtrunc(fkstring *fks, int newlen)
 	return fks;
 }
 
-fkstring *fkstrdup(fkstring *fks)
+fkstring *fkstrdup(const fkstring *fks)
 {
-	int		newlen, newalloc;
+	size_t		newlen, newalloc;
 	fkstring	*newfkstr;
 
 	if (!fks)
 		return NULL;
 
 	newlen = fks->len;
-	if (newlen <= 0)
+	if (newlen == 0)
 		return fkstrnew(NULL);
 
 	newfkstr = malloc(sizeof(fkstring));
@@ -131,11 +163,11 @@ fkstring *fkstrdup(fkstring *fks)
 
 /* Assumes src has nonzero length, but dst may have zero length. */
 
-static fkstring *fkstrcat_internal(fkstring *dst, char *src, int srclen)
+static fkstring *fkstrcat_internal(fkstring *dst, const char *src, size_t srclen)
 {
-	int newalloc;
+	size_t newalloc;
 	char *newbuf;
-	
+
 	if ((dst->alloc - dst->len) <= (srclen))
 	{
 		newalloc = allocforlen(dst->len + srclen);
@@ -157,19 +189,15 @@ static fkstring *fkstrcat_internal(fkstring *dst, char *src, int srclen)
 	return dst;
 }
 
-fkstring *fkstrcat(fkstring *dst, fkstring *src)
+fkstring *fkstrcat(fkstring *dst, const fkstring *src)
 {
 	if (src->len)
-	{
 		return fkstrcat_internal(dst, src->cstr, src->len);
-	}
 	else
-	{
 		return dst;
-	}
 }
 
-fkstring *fkstrcatc(fkstring *dst, char *src)
+fkstring *fkstrcatc(fkstring *dst, const char *src)
 {
 	if (src && src[0])
 		return fkstrcat_internal(dst, src, strlen(src));
@@ -182,10 +210,9 @@ fkstring *fkstrcatone(fkstring *dst, char c)
 	return fkstrcat_internal(dst, &c, 1);
 }
 
-int fkremove(fkstring *fstr, int start, int len)
+size_t fkremove(fkstring *fstr, size_t start, size_t len)
 {
-
-	if ((start < 0) || (len < 0) || (!fstr))
+	if (!fstr)
 		return 0;
 
 	if ((start >= fstr->len) || (len == 0))
@@ -203,12 +230,12 @@ int fkremove(fkstring *fstr, int start, int len)
 	return len;
 }
 
-fkstring *fksubstr(fkstring *fstr, int start, int len)
+fkstring *fksubstr(const fkstring *fstr, size_t start, size_t len)
 {
-	int		newalloc;
+	size_t		newalloc;
 	fkstring	*newfkstr;
 
-	if ((start < 0) || (len < 0) || (!fstr))
+	if (!fstr)
 		return NULL;
 
 	if ((start >= fstr->len) || (len == 0))

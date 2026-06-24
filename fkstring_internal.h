@@ -1,11 +1,13 @@
 #ifndef __FKSTRING_INTERNAL_H__
 #define __FKSTRING_INTERNAL_H__
 
+#include <stddef.h>
+
 extern int _bumpfactor;
 extern int _deflatefactor;
-extern int _minalloc;
-extern int _sprintftry;
-extern char *errmsgs[];
+extern size_t _minalloc;
+extern size_t _sprintftry;
+extern const char *errmsgs[];
 
 #define FKSTRERR_SUCCESS	0
 #define FKSTRERR_MEMALLOC	1
@@ -17,6 +19,6 @@ extern char *errmsgs[];
 #define FKSTR_DEFAULT_SPRINTF_TRY	(3*FKSTR_DEFAULT_MIN_ALLOC)
 
 void fkpanic(int cause);
-int allocforlen(int len);
+size_t allocforlen(size_t len);
 
 #endif /* __FKSTRING_INTERNAL_H__ */
