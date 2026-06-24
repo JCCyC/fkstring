@@ -144,6 +144,13 @@ descriptor `fd`. Returns `NULL` on a read error (negative return from
 
 ## Tests / demo
 
-`smoketest.c` exercises the library (concatenation, growth/shrink behavior,
-`fksprintf`, `fkremove`, stdin/fd reading). Build it with `make` and run
-`./smoketest`.
+The `tests/` directory holds an automated test suite covering every public
+function. Run it with:
+
+```sh
+make check
+```
+
+`smoketest.c` is a separate manual demo program exercising the library
+(concatenation, growth/shrink behavior, `fksprintf`, `fkremove`, stdin/fd
+reading). Build it with `make` and run `./smoketest`.
