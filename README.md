@@ -39,8 +39,8 @@ make
 sudo make install
 ```
 
-This builds `libfkstring.a` (static) and `libfkstring.so` (shared), plus the
-`smoketest` demo program. `make install` installs the libraries to
+This builds `libfkstring.a` (static) and `libfkstring.so` (shared).
+`make install` installs the libraries to
 `$(PREFIX)/lib` and the headers (`fkstring.h`, `fkstring_internal.h`) to
 `$(PREFIX)/include`, where `PREFIX` defaults to `/usr/local`. Edit `PREFIX`
 in the `Makefile` to install elsewhere. The install step runs `install -o
@@ -281,7 +281,3 @@ function. Run it with:
 ```sh
 make check
 ```
-
-`smoketest.c` is a separate manual demo program exercising the library
-(concatenation, growth/shrink behavior, `fksprintf`, `fkremove`, stdin/fd
-reading). Build it with `make` and run `./smoketest`.

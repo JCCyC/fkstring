@@ -10,7 +10,6 @@
       "Bash(git mv *)",
       "Bash(git commit -m ' *)",
       "Bash(git check-ignore *)",
-      "Bash(./smoketest)",
       "Bash(./tests/alltests)",
       "Skill(update-config)",
       "Skill(update-config:*)",

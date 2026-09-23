@@ -12,7 +12,7 @@ LGPL-2.1 licensed.
 
 ## Commands
 
-- Build everything (`libfkstring.a`, `libfkstring.so`, `smoketest`): `make`
+- Build everything (`libfkstring.a`, `libfkstring.so`): `make`
 - Clean build artifacts: `make clean`
 - Install system-wide: `make install` — requires root (the Makefile runs
   `install -o root -g root`); installs to `$(PREFIX)/lib` and
@@ -31,8 +31,7 @@ exposing a `test_suite` of `{ description, test_fn }` cases built with the
 `CHECK()` macro from `tests/framework.h`. `tests/alltests.c` collects all
 suites and `tests/framework.c`'s `run_suites()` prints `#N (description)...`
 (unbuffered, so the cursor visibly sits there during a slow test) followed
-by `PASS` or `FAIL - <reason>`. It deliberately does **not** test
-`smoketest.c`, which remains the manual demo program described below.
+by `PASS` or `FAIL - <reason>`.
 
 `fksprintf("")` (and `fkstrcatf()` with empty output onto an empty string)
 and `fkstrread()` at EOF/with `count==0` are also asserted against the
@@ -43,13 +42,6 @@ paths originally left a stale nonzero `alloc` behind despite freeing/NULLing
 tests `fkpanic()` (which calls `exit(253)`) by forking and inspecting the
 child's exit status/stderr, since calling it in-process would kill the
 whole test run.
-
-`smoketest.c` (built via `make`, not `make check`) is a separate manual
-smoke-test/demo program: it runs a sequence of operations and prints the
-resulting `len`/`alloc`/contents after each one via the local `fkshow()`
-helper. To eyeball a change interactively, build and run `./smoketest` and
-visually diff the output against a known-good run (e.g. `git stash` the
-change, capture output, restore, compare).
 
 ## Architecture
 
@@ -216,8 +208,8 @@ done); the top remaining one, #4, is the inverse of the existing `fksplit`.
     define and ideally enforce that views never reach mutators or
     `fkstrdestroy` — e.g. an `alloc == 0 && len > 0` "borrowed" marker.
 16. **Escaping: `fkescape(fks)` / `fkunescape(fks)`.** C-style escaping of
-    non-printables and embedded NULs; useful for debugging, and could
-    simplify `smoketest.c`'s `fkshow()`.
+    non-printables and embedded NULs; useful for debugging (e.g. in test
+    failure messages).
 17. **Invariant checking: `FKSTR_DEBUG` build flag with
     `fkstrcheck(const fkstring *fks)`.** Asserts `cstr[len] == '\0'`,
     `len < alloc`, and the `len == 0` rule. Wire it into the test suite
