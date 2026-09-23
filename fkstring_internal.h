@@ -2,6 +2,7 @@
 #define __FKSTRING_INTERNAL_H__
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -15,6 +16,7 @@ extern const char *errmsgs[];
 #define FKSTRERR_SUCCESS	0
 #define FKSTRERR_MEMALLOC	1
 #define FKSTRERR_VSNPRINTF	2
+#define FKSTRERR_OVERFLOW	3
 
 #define FKSTR_DEFAULT_BUMPFACTOR	143
 #define FKSTR_DEFAULT_DEFLATEFACTOR	350
@@ -26,6 +28,14 @@ static inline void fkpanic(int cause)
 	if (cause)
 		if (write(2, errmsgs[cause], strlen(errmsgs[cause]))) {}	/* nothing to do on failure; if() silences -Wunused-result */
 	exit(253);
+}
+
+/* Checked a + b for length arithmetic: overflow is as unrecoverable as OOM. */
+static inline size_t fkaddlen(size_t a, size_t b)
+{
+	if (b > SIZE_MAX - a)
+		fkpanic(FKSTRERR_OVERFLOW);
+	return a + b;
 }
 
 static inline size_t allocforlen(size_t len)

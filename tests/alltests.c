@@ -1,6 +1,7 @@
 #include "framework.h"
 
 extern test_suite allocforlen_suite;
+extern test_suite fkaddlen_suite;
 extern test_suite fkpanic_suite;
 extern test_suite fkstrerr_suite;
 extern test_suite fkstrnew_suite;
@@ -17,6 +18,7 @@ extern test_suite fkstrfind_suite;
 extern test_suite fkstrchr_suite;
 extern test_suite fkstartswith_suite;
 extern test_suite fksprintf_suite;
+extern test_suite fkstrcatf_suite;
 extern test_suite fkstrwrite_suite;
 extern test_suite fkstrread_suite;
 
@@ -37,9 +39,11 @@ int main(void)
 		fkstrchr_suite,
 		fkstartswith_suite,
 		allocforlen_suite,
+		fkaddlen_suite,
 		fkpanic_suite,
 		fkstrerr_suite,
 		fksprintf_suite,
+		fkstrcatf_suite,
 		fkstrwrite_suite,
 		fkstrread_suite,
 	};

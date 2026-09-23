@@ -34,11 +34,12 @@ suites and `tests/framework.c`'s `run_suites()` prints `#N (description)...`
 by `PASS` or `FAIL - <reason>`. It deliberately does **not** test
 `smoketest.c`, which remains the manual demo program described below.
 
-`fksprintf("")` and `fkstrread()` at EOF/with `count==0` are also asserted
-against the `fkstring.h` len==0 invariant (`alloc == 0` whenever `len == 0`)
-— both code paths originally left a stale nonzero `alloc` behind despite
-freeing/NULLing `cstr`, which `fksprintf()`'s and `fkstrread()`'s
-`bytesread == 0` handling now correct explicitly. `tests/test_fkpanic.c`
+`fksprintf("")` (and `fkstrcatf()` with empty output onto an empty string)
+and `fkstrread()` at EOF/with `count==0` are also asserted against the
+`fkstring.h` len==0 invariant (`alloc == 0` whenever `len == 0`). Both code
+paths originally left a stale nonzero `alloc` behind despite freeing/NULLing
+`cstr`. `fkstrcatvf()`'s `dst->len == 0` tail and `fkstrread()`'s
+`bytesread == 0` handling now correct this explicitly. `tests/test_fkpanic.c`
 tests `fkpanic()` (which calls `exit(253)`) by forking and inspecting the
 child's exit status/stderr, since calling it in-process would kill the
 whole test run.
@@ -90,7 +91,8 @@ below are easy to miss):
   fallback. `make check` only exercises the `memmem()` path on glibc; to
   test the fallback, build with
   `make CFLAGS="-I. -Wall -O2 -fpic -DFKSTR_HAVE_MEMMEM=0"` after `make clean`.
-- `fkstdio.c` — I/O-adjacent constructors: `fksprintf`, `fkstrwrite`,
+- `fkstdio.c` — formatting and I/O: `fkstrcatvf` (the formatting core),
+  its wrappers `fkstrcatf`/`fkvsprintf`/`fksprintf`, plus `fkstrwrite` and
   `fkstrread`.
 - `fkstrerr.c` — the `errmsgs[]` string table indexed by `FKSTRERR_*`.
 
@@ -116,9 +118,12 @@ Cross-cutting conventions a change should preserve:
    for invalid-argument cases (e.g. a `NULL` `fkstring *`), not OOM. New
    allocating code should follow the same `fkpanic()`-on-OOM pattern rather
    than introducing a different error-handling style.
-4. **`fksprintf`'s two-pass `vsnprintf`.** `make_message()` in `fkstdio.c`
-   first tries with a guessed buffer size (`_sprintftry`); if `vsnprintf()`
-   reports it needed more space, it retries once with the exact size. This
+4. **Two-pass `vsnprintf` in `fkstrcatvf()`.** All four formatting
+   functions go through `fkstrcatvf()` in `fkstdio.c`. Its first pass
+   formats directly at `dst->cstr + dst->len` into the existing slack, on a
+   `va_copy()`. An empty `dst` gets a `_sprintftry`-byte buffer for this
+   pass. If `vsnprintf()` reports it needed more space, `dst` grows via
+   `allocforlen()` and the second pass consumes the caller's `ap`. This
    handles both glibc >= 2.1 (returns the required size) and the older
    glibc 2.0 behavior (returns -1, handled by a 10x size guess) — see the
    `TODO` comment for the known limitation on very old glibc.
@@ -137,32 +142,29 @@ A backlog of proposed additions, numbered so a session can be asked to "do
 Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
-roughly by usefulness; the top one (#3 — #1, comparison, and #2, search,
-are done) removes one of the most common reasons users currently fall back to NUL-scanning
-libc calls on `fkcstr()`.
+roughly by usefulness (#1 comparison, #2 search and #3 formatted append are
+done); the top remaining one, #4, is the inverse of the existing `fksplit`.
 
 **Cross-cutting concerns for every item below:**
 
-- *Overflow in length arithmetic.* `dst->len + src->len` and
-  `allocforlen()`'s `* _bumpfactor / 100` can wrap for huge inputs. Consider
-  a checked-add helper that `fkpanic()`s on overflow (same non-recoverable
-  policy as OOM), and use it in new code.
-- *Return-type consistency.* Existing mutators return either `fkstring *`
-  (`fkstrcat`, `fkstrtrunc`) or `size_t` (`fkremove`, trims). New functions
-  should follow one documented rule (e.g. "returns `dst` for chaining" vs.
-  "returns bytes affected") — decide and state it when adding the first one.
+- *Overflow in length arithmetic.* Use `fkaddlen(a, b)`
+  (`fkstring_internal.h`) for length sums in new code. It `fkpanic()`s with
+  `FKSTRERR_OVERFLOW` on wraparound, the same non-recoverable policy as OOM.
+  Older code (`fkstrcat_internal`'s `dst->len + srclen`) doesn't use it yet,
+  and `allocforlen()`'s `len * _bumpfactor` is still unchecked. That
+  multiply wraps at `SIZE_MAX / 143`, only about 30 MB on 32-bit.
+- *Return-type rule* (settled by `fkstrcatf`). Mutators that append or
+  otherwise grow/rewrite `dst` return `dst` for chaining, or `NULL` for
+  invalid arguments (`fkstrcatf`, `fkstrtrunc`, and #5/#6; `fkstrcat`/
+  `fkstrcatc`/`fkstrcatone` return `dst` but don't yet NULL-check it).
+  Mutators that only remove bytes return a `size_t` count or length
+  (`fkremove`, trims, #8).
 - *NUL safety.* Everything must honor `len` and tolerate `cstr == NULL` for
   empty strings: use `memcmp`/`memchr`/`memmem`, never `strcmp`/`strchr`/
   `strstr` on `cstr`.
 
 ### Tier 1 — basic gaps
 
-3. **Formatted append: `fkstrcatf(dst, fmt, ...)`, plus `fkvsprintf` and
-   `fkstrcatvf` (`va_list`) variants.** Refactor `make_message()`'s
-   two-pass `vsnprintf` to write directly at `dst->cstr + dst->len` after an
-   `allocforlen()` grow; `fksprintf` then becomes `fkstrcatf` on an empty
-   string. The `va_list` variants let users build their own wrappers (e.g.
-   loggers). Keep the `format(printf, ...)` attribute.
 4. **Join: `fkjoin(fkstring **arr, const char *sep)`.** Inverse of
    `fksplit`, over the same NULL-terminated array. Pre-compute the total
    length so it allocates exactly once.

@@ -3,6 +3,7 @@ LDFLAGS=-L.. -Wall -fpic
 
 SRCS=framework.c \
      test_allocforlen.c \
+     test_fkaddlen.c \
      test_fkpanic.c \
      test_fkstrerr.c \
      test_fkstrnew.c \
@@ -10,6 +11,7 @@ SRCS=framework.c \
      test_fkstrdup.c \
      test_fkstrtrunc.c \
      test_fkstrcat.c \
+     test_fkstrcatf.c \
      test_fksubstr.c \
      test_fkremove.c \
      test_fktrim.c \

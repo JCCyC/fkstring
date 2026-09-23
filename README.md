@@ -29,7 +29,8 @@ the contents to a libc or POSIX function.
   conventions).
 - On allocation failure, the library calls `fkpanic()`, which prints a
   message to stderr and calls `exit()`. fkstring is not designed to recover
-  from out-of-memory conditions.
+  from out-of-memory conditions. Length arithmetic that would overflow
+  `size_t` is treated the same way.
 
 ## Building and installing
 
@@ -110,6 +111,32 @@ Appends a null-terminated C string `src` to `dst` in place. Returns `dst`.
 #### `fkstring *fkstrcatone(fkstring *dst, char c);`
 Appends a single character `c` to `dst` in place. Returns `dst`.
 
+#### `fkstring *fkstrcatf(fkstring *dst, const char *fmt, ...);`
+#### `fkstring *fkstrcatvf(fkstring *dst, const char *fmt, va_list ap);`
+Append `printf()`-formatted output to `dst` in place, writing directly into
+`dst`'s buffer past its current contents. If the output fits in the existing
+spare capacity, nothing is reallocated. Otherwise `dst` grows once, by the
+usual bump factor, and the output is formatted again. Returns `dst` for
+chaining, or `NULL` if `dst` or `fmt` is `NULL`. `%c` with a zero argument
+appends an embedded NUL, and `len` counts it.
+
+`fkstrcatvf()` takes a `va_list` so you can write your own variadic
+wrappers. As with `vprintf()`, `ap` is indeterminate afterwards: call
+`va_end()` on it and don't reuse it.
+
+```c
+static void logmsg(fkstring *log, const char *fmt, ...)
+{
+	va_list ap;
+
+	fkstrcatc(log, "[log] ");
+	va_start(ap, fmt);
+	fkstrcatvf(log, fmt, ap);
+	va_end(ap);
+	fkstrcatone(log, '\n');
+}
+```
+
 #### `fkstring *fkstrtrunc(fkstring *fks, size_t newlen);`
 Truncates `fks` to `newlen` bytes in place. Returns `fks`, or `NULL` if
 `fks` is `NULL`. No-op if `newlen >= fkstrlen(fks)`.
@@ -152,7 +179,10 @@ fkarraydestroy(parts);
 ```
 
 #### `fkstring *fksprintf(const char *fmt, ...);`
-Creates a new `fkstring` formatted using `printf()` semantics.
+#### `fkstring *fkvsprintf(const char *fmt, va_list ap);`
+Create a new `fkstring` formatted using `printf()` semantics. They are
+equivalent to `fkstrcatf()`/`fkstrcatvf()` on a new empty string, and return
+`NULL` if `fmt` is `NULL`.
 
 ### Comparison
 

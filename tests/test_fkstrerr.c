@@ -24,10 +24,18 @@ static int test_errmsgs_vsnprintf(char *errbuf, size_t errbuflen)
 	return 1;
 }
 
+static int test_errmsgs_overflow(char *errbuf, size_t errbuflen)
+{
+	CHECK(strcmp(errmsgs[FKSTRERR_OVERFLOW], "Length arithmetic overflow\n") == 0,
+		"unexpected text: '%s'", errmsgs[FKSTRERR_OVERFLOW]);
+	return 1;
+}
+
 static test_case fkstrerr_tests[] = {
 	{ "errmsgs[FKSTRERR_SUCCESS] has the expected text", test_errmsgs_success },
 	{ "errmsgs[FKSTRERR_MEMALLOC] has the expected text", test_errmsgs_memalloc },
 	{ "errmsgs[FKSTRERR_VSNPRINTF] has the expected text", test_errmsgs_vsnprintf },
+	{ "errmsgs[FKSTRERR_OVERFLOW] has the expected text", test_errmsgs_overflow },
 };
 
 test_suite fkstrerr_suite = { fkstrerr_tests, sizeof(fkstrerr_tests) / sizeof(fkstrerr_tests[0]) };

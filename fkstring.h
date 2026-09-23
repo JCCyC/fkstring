@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdarg.h>
 
 typedef struct _fkstring
 {
@@ -49,6 +50,9 @@ int fkendswithc(const fkstring *fks, const char *suffix);
 
 /* fkstdio.c */
 fkstring *fksprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+fkstring *fkvsprintf(const char *fmt, va_list ap) __attribute__((format(printf, 1, 0)));
+fkstring *fkstrcatf(fkstring *dst, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+fkstring *fkstrcatvf(fkstring *dst, const char *fmt, va_list ap) __attribute__((format(printf, 2, 0)));
 ssize_t fkstrwrite(int fd, const fkstring *fks);
 fkstring *fkstrread(int fd, size_t count);
 
