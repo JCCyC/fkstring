@@ -503,19 +503,54 @@ size_t fkstrrchr(const fkstring *fks, char c)
 	return FKSTR_NPOS;
 }
 
-int fkstartswith(const fkstring *fks, const fkstring *prefix)
+/* Shared by fkstartswith()/fkstartswithc(). The length check comes first so
+ * an empty prefix never touches fks->cstr, which is NULL for an empty string. */
+static int fkstartswith_internal(const fkstring *fks, const char *prefix, size_t plen)
 {
-	if (!fks || !prefix || prefix->len > fks->len)
+	if (plen > fks->len)
 		return 0;
 
-	return prefix->len == 0 || memcmp(fks->cstr, prefix->cstr, prefix->len) == 0;
+	return plen == 0 || memcmp(fks->cstr, prefix, plen) == 0;
+}
+
+int fkstartswith(const fkstring *fks, const fkstring *prefix)
+{
+	if (!fks || !prefix)
+		return 0;
+
+	return fkstartswith_internal(fks, prefix->cstr, prefix->len);
+}
+
+int fkstartswithc(const fkstring *fks, const char *prefix)
+{
+	if (!fks || !prefix)
+		return 0;
+
+	return fkstartswith_internal(fks, prefix, strlen(prefix));
+}
+
+/* Shared by fkendswith()/fkendswithc(). Checks slen <= fks->len before
+ * computing fks->len - slen, to avoid unsigned wraparound. */
+static int fkendswith_internal(const fkstring *fks, const char *suffix, size_t slen)
+{
+	if (slen > fks->len)
+		return 0;
+
+	return slen == 0 || memcmp(&fks->cstr[fks->len - slen], suffix, slen) == 0;
 }
 
 int fkendswith(const fkstring *fks, const fkstring *suffix)
 {
-	if (!fks || !suffix || suffix->len > fks->len)
+	if (!fks || !suffix)
 		return 0;
 
-	return suffix->len == 0 ||
-		memcmp(&fks->cstr[fks->len - suffix->len], suffix->cstr, suffix->len) == 0;
+	return fkendswith_internal(fks, suffix->cstr, suffix->len);
+}
+
+int fkendswithc(const fkstring *fks, const char *suffix)
+{
+	if (!fks || !suffix)
+		return 0;
+
+	return fkendswith_internal(fks, suffix, strlen(suffix));
 }

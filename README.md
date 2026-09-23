@@ -215,14 +215,21 @@ Returns the offset of the first byte equal to `c` at or after byte offset
 Returns the offset of the last byte equal to `c`.
 
 #### `int fkstartswith(const fkstring *fks, const fkstring *prefix);`
+#### `int fkstartswithc(const fkstring *fks, const char *prefix);`
 #### `int fkendswith(const fkstring *fks, const fkstring *suffix);`
+#### `int fkendswithc(const fkstring *fks, const char *suffix);`
 Return 1 if `fks` begins (or ends) with `prefix` (or `suffix`), 0
 otherwise. The empty string is a prefix and suffix of every `fkstring`.
-Return 0 if either argument is `NULL`.
+Return 0 if either argument is `NULL`. The `c` variants take a
+null-terminated C string as the prefix/suffix; `fks` itself is still
+compared by `len`, so a suffix match lines up with the true end of `fks`,
+past any embedded NULs.
 
 ```c
 fkstring *f = fkstrnew("file.tar.gz"), *gz = fkstrnew(".gz");
-fkendswith(f, gz); /* 1 */
+fkendswith(f, gz);          /* 1 */
+fkendswithc(f, ".tar.gz");  /* 1 */
+fkstartswithc(f, "file.");  /* 1 */
 ```
 
 ### I/O

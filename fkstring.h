@@ -43,7 +43,9 @@ size_t fkstrfindc(const fkstring *hay, const char *needle, size_t start);
 size_t fkstrchr(const fkstring *fks, char c, size_t start);
 size_t fkstrrchr(const fkstring *fks, char c);
 int fkstartswith(const fkstring *fks, const fkstring *prefix);
+int fkstartswithc(const fkstring *fks, const char *prefix);
 int fkendswith(const fkstring *fks, const fkstring *suffix);
+int fkendswithc(const fkstring *fks, const char *suffix);
 
 /* fkstdio.c */
 fkstring *fksprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));

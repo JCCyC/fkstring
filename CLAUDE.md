@@ -79,14 +79,16 @@ below are easy to miss):
   locale-dependent `tolower()`, for the same reason the trims use
   `isfkspace` instead of `isspace()`.
   Search (`fkstrfind`/`fkstrfindc`, both funneling through the static
-  `fkstrfind_internal`, plus `fkstrchr`/`fkstrrchr`/`fkstartswith`/
-  `fkendswith`): offsets are `size_t`, with `FKSTR_NPOS` (`fkstring.h`) for
-  not-found or `NULL` arguments, and an empty needle matches at `start` iff
-  `start <= len`. Substring search goes through the static `fkmemmem`, which
-  calls `memmem()` when `FKSTR_HAVE_MEMMEM` (auto-detected at the top of
-  `fkstring.c`, which also `#define`s `_GNU_SOURCE`) is 1, and otherwise
-  uses a `memchr`+`memcmp` fallback. `make check` only exercises the
-  `memmem()` path on glibc; to test the fallback, build with
+  `fkstrfind_internal`, plus `fkstrchr`/`fkstrrchr`, and `fkstartswith`/
+  `fkstartswithc` and `fkendswith`/`fkendswithc`, each pair funneling
+  through a static `*_internal` helper): offsets are `size_t`, with
+  `FKSTR_NPOS` (`fkstring.h`) for not-found or `NULL` arguments, and an
+  empty needle matches at `start` iff `start <= len`. Substring search goes
+  through the static `fkmemmem`, which calls `memmem()` when
+  `FKSTR_HAVE_MEMMEM` (auto-detected at the top of `fkstring.c`, which also
+  `#define`s `_GNU_SOURCE`) is 1, and otherwise uses a `memchr`+`memcmp`
+  fallback. `make check` only exercises the `memmem()` path on glibc; to
+  test the fallback, build with
   `make CFLAGS="-I. -Wall -O2 -fpic -DFKSTR_HAVE_MEMMEM=0"` after `make clean`.
 - `fkstdio.c` — I/O-adjacent constructors: `fksprintf`, `fkstrwrite`,
   `fkstrread`.
