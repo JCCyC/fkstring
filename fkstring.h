@@ -16,6 +16,9 @@ typedef struct _fkstring
 #define fkstrsize(fks) ((fks)->alloc)
 #define fkcstr(fks) ((fks)->cstr)
 
+/* Returned by the search functions (fkstrfind() etc.) when there's no match. */
+#define FKSTR_NPOS ((size_t)-1)
+
 /* fkstring.c */
 fkstring *fkstrnew(const char *s);
 fkstring *fkstrnewb(const void *buf, size_t len);
@@ -35,6 +38,12 @@ void fkarraydestroy(fkstring **fka);
 int fkstrcmp(const fkstring *a, const fkstring *b);
 int fkstrcasecmp(const fkstring *a, const fkstring *b);
 int fkstreq(const fkstring *a, const fkstring *b);
+size_t fkstrfind(const fkstring *hay, const fkstring *needle, size_t start);
+size_t fkstrfindc(const fkstring *hay, const char *needle, size_t start);
+size_t fkstrchr(const fkstring *fks, char c, size_t start);
+size_t fkstrrchr(const fkstring *fks, char c);
+int fkstartswith(const fkstring *fks, const fkstring *prefix);
+int fkendswith(const fkstring *fks, const fkstring *suffix);
 
 /* fkstdio.c */
 fkstring *fksprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));

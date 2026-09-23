@@ -78,6 +78,16 @@ below are easy to miss):
   equal), and case folding is ASCII-only (`fkfoldcase`), deliberately not
   locale-dependent `tolower()`, for the same reason the trims use
   `isfkspace` instead of `isspace()`.
+  Search (`fkstrfind`/`fkstrfindc`, both funneling through the static
+  `fkstrfind_internal`, plus `fkstrchr`/`fkstrrchr`/`fkstartswith`/
+  `fkendswith`): offsets are `size_t`, with `FKSTR_NPOS` (`fkstring.h`) for
+  not-found or `NULL` arguments, and an empty needle matches at `start` iff
+  `start <= len`. Substring search goes through the static `fkmemmem`, which
+  calls `memmem()` when `FKSTR_HAVE_MEMMEM` (auto-detected at the top of
+  `fkstring.c`, which also `#define`s `_GNU_SOURCE`) is 1, and otherwise
+  uses a `memchr`+`memcmp` fallback. `make check` only exercises the
+  `memmem()` path on glibc; to test the fallback, build with
+  `make CFLAGS="-I. -Wall -O2 -fpic -DFKSTR_HAVE_MEMMEM=0"` after `make clean`.
 - `fkstdio.c` — I/O-adjacent constructors: `fksprintf`, `fkstrwrite`,
   `fkstrread`.
 - `fkstrerr.c` — the `errmsgs[]` string table indexed by `FKSTRERR_*`.
@@ -125,8 +135,8 @@ A backlog of proposed additions, numbered so a session can be asked to "do
 Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
-roughly by usefulness; the top ones (#2, #3 — #1, comparison, is done)
-remove the most common reasons users currently fall back to NUL-scanning
+roughly by usefulness; the top one (#3 — #1, comparison, and #2, search,
+are done) removes one of the most common reasons users currently fall back to NUL-scanning
 libc calls on `fkcstr()`.
 
 **Cross-cutting concerns for every item below:**
@@ -145,11 +155,6 @@ libc calls on `fkcstr()`.
 
 ### Tier 1 — basic gaps
 
-2. **Search: `fkstrfind(hay, needle, start)`, `fkstrfindc(hay, cstr,
-   start)`, `fkstrchr(fks, c, start)`, `fkstrrchr(fks, c)`, plus
-   `fkstartswith`/`fkendswith`.** Return a `size_t` offset, with a sentinel
-   `#define FKSTR_NPOS ((size_t)-1)` for not-found. Use `memchr`/`memmem`;
-   `memmem` is a GNU/BSD extension, so feature-test it or provide a fallback.
 3. **Formatted append: `fkstrcatf(dst, fmt, ...)`, plus `fkvsprintf` and
    `fkstrcatvf` (`va_list`) variants.** Refactor `make_message()`'s
    two-pass `vsnprintf` to write directly at `dst->cstr + dst->len` after an

@@ -180,6 +180,51 @@ fkstrcmp(a, b);     /* -1: 'H' (0x48) < 'h' (0x68) */
 fkstrcasecmp(a, b); /* 0 */
 ```
 
+### Searching
+
+The search functions return a byte offset into the haystack, or the
+sentinel `FKSTR_NPOS` (`(size_t)-1`) when there is no match or an argument
+is `NULL`. Like the comparison functions, they honor `len`: they match
+across embedded NUL bytes, never match the trailing NUL at `cstr[len]`,
+and are safe on empty strings.
+
+#### `size_t fkstrfind(const fkstring *hay, const fkstring *needle, size_t start);`
+#### `size_t fkstrfindc(const fkstring *hay, const char *needle, size_t start);`
+Return the offset of the first occurrence of `needle` in `hay` at or after
+byte offset `start`. `fkstrfindc()` takes a null-terminated C string as the
+needle; the haystack is still searched in full, past any embedded NULs.
+An empty needle matches at `start` itself, provided `start <= fkstrlen(hay)`
+(the same rule as C++'s `std::string::find`). Uses `memmem()` where the
+platform provides it (glibc, the BSDs, macOS, POSIX.1-2024), with a portable
+fallback otherwise. Build with `-DFKSTR_HAVE_MEMMEM=0` or `=1` to override
+the detection.
+
+```c
+fkstring *s = fkstrnew("aXbXXc"), *x = fkstrnew("X");
+size_t pos;
+
+for (pos = fkstrfind(s, x, 0); pos != FKSTR_NPOS; pos = fkstrfind(s, x, pos + 1))
+	printf("%zu\n", pos); /* 1, 3, 4 */
+```
+
+#### `size_t fkstrchr(const fkstring *fks, char c, size_t start);`
+Returns the offset of the first byte equal to `c` at or after byte offset
+`start`, or `FKSTR_NPOS` if there is none or `start >= fkstrlen(fks)`.
+
+#### `size_t fkstrrchr(const fkstring *fks, char c);`
+Returns the offset of the last byte equal to `c`.
+
+#### `int fkstartswith(const fkstring *fks, const fkstring *prefix);`
+#### `int fkendswith(const fkstring *fks, const fkstring *suffix);`
+Return 1 if `fks` begins (or ends) with `prefix` (or `suffix`), 0
+otherwise. The empty string is a prefix and suffix of every `fkstring`.
+Return 0 if either argument is `NULL`.
+
+```c
+fkstring *f = fkstrnew("file.tar.gz"), *gz = fkstrnew(".gz");
+fkendswith(f, gz); /* 1 */
+```
+
 ### I/O
 
 #### `ssize_t fkstrwrite(int fd, const fkstring *fks);`

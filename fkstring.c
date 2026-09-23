@@ -1,8 +1,23 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE	/* for memmem() on glibc/musl */
+#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <fkstring.h>
 #include <stdio.h>
 #include <fkstring_internal.h>
+
+/* memmem() is a GNU/BSD extension, only standardized in POSIX.1-2024. Build
+ * with -DFKSTR_HAVE_MEMMEM=0 (or =1) to override this detection. */
+#ifndef FKSTR_HAVE_MEMMEM
+#if defined(__GLIBC__) || defined(__FreeBSD__) || defined(__NetBSD__) || \
+    defined(__OpenBSD__) || defined(__DragonFly__) || defined(__APPLE__) || \
+    (defined(_POSIX_VERSION) && _POSIX_VERSION >= 202405L)
+#define FKSTR_HAVE_MEMMEM 1
+#else
+#define FKSTR_HAVE_MEMMEM 0
+#endif
+#endif
 
 int _bumpfactor = FKSTR_DEFAULT_BUMPFACTOR;
 int _deflatefactor = FKSTR_DEFAULT_DEFLATEFACTOR;
@@ -404,4 +419,103 @@ int fkstreq(const fkstring *a, const fkstring *b)
 		return 0;
 
 	return a->len == 0 || memcmp(a->cstr, b->cstr, a->len) == 0;
+}
+
+/* Assumes 0 < nlen <= haylen. */
+static const char *fkmemmem(const char *hay, size_t haylen, const char *needle, size_t nlen)
+{
+#if FKSTR_HAVE_MEMMEM
+	return memmem(hay, haylen, needle, nlen);
+#else
+	const char *p = hay;
+	const char *last = hay + (haylen - nlen);	/* last position a match can start at */
+
+	while (p <= last)
+	{
+		p = memchr(p, needle[0], last - p + 1);
+		if (!p)
+			return NULL;
+		if (memcmp(p, needle, nlen) == 0)
+			return p;
+		p++;
+	}
+	return NULL;
+#endif
+}
+
+/* Shared by fkstrfind()/fkstrfindc(). An empty needle matches at start, as
+ * long as start <= hay->len. The cstr pointer is only touched when the
+ * needle is non-empty and fits, since an empty fkstring's cstr is NULL. */
+static size_t fkstrfind_internal(const fkstring *hay, const char *needle, size_t nlen, size_t start)
+{
+	const char *p;
+
+	if (start > hay->len)
+		return FKSTR_NPOS;
+	if (nlen == 0)
+		return start;
+	if (nlen > hay->len - start)
+		return FKSTR_NPOS;
+
+	p = fkmemmem(&hay->cstr[start], hay->len - start, needle, nlen);
+	return p ? (size_t)(p - hay->cstr) : FKSTR_NPOS;
+}
+
+size_t fkstrfind(const fkstring *hay, const fkstring *needle, size_t start)
+{
+	if (!hay || !needle)
+		return FKSTR_NPOS;
+
+	return fkstrfind_internal(hay, needle->cstr, needle->len, start);
+}
+
+size_t fkstrfindc(const fkstring *hay, const char *needle, size_t start)
+{
+	if (!hay || !needle)
+		return FKSTR_NPOS;
+
+	return fkstrfind_internal(hay, needle, strlen(needle), start);
+}
+
+size_t fkstrchr(const fkstring *fks, char c, size_t start)
+{
+	const char *p;
+
+	if (!fks || start >= fks->len)
+		return FKSTR_NPOS;
+
+	p = memchr(&fks->cstr[start], c, fks->len - start);
+	return p ? (size_t)(p - fks->cstr) : FKSTR_NPOS;
+}
+
+/* A plain loop rather than memrchr(), which is GNU-only. */
+size_t fkstrrchr(const fkstring *fks, char c)
+{
+	size_t i;
+
+	if (!fks)
+		return FKSTR_NPOS;
+
+	for (i = fks->len; i > 0; i--)
+		if (fks->cstr[i - 1] == c)
+			return i - 1;
+
+	return FKSTR_NPOS;
+}
+
+int fkstartswith(const fkstring *fks, const fkstring *prefix)
+{
+	if (!fks || !prefix || prefix->len > fks->len)
+		return 0;
+
+	return prefix->len == 0 || memcmp(fks->cstr, prefix->cstr, prefix->len) == 0;
+}
+
+int fkendswith(const fkstring *fks, const fkstring *suffix)
+{
+	if (!fks || !suffix || suffix->len > fks->len)
+		return 0;
+
+	return suffix->len == 0 ||
+		memcmp(&fks->cstr[fks->len - suffix->len], suffix->cstr, suffix->len) == 0;
 }
