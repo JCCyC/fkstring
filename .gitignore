@@ -36,6 +36,7 @@
 *.x86_64
 *.hex
 /tests/alltests
+/tests/alltests-memcheck
 
 # Debug files
 *.dSYM/

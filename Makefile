@@ -30,6 +30,10 @@ check: libfkstring.a
 
 test: check
 
+memcheck: libfkstring.a
+	$(MAKE) -C tests alltests-memcheck
+	valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=99 ./tests/alltests-memcheck
+
 install: libfkstring.a libfkstring.so
 	install -o root -g root -m 755 libfkstring.a libfkstring.so $(PREFIX)/lib
 	install -o root -g root -m 644 fkstring.h fkstring_internal.h $(PREFIX)/include

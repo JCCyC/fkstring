@@ -30,8 +30,13 @@ OBJS=$(SRCS:.c=.o)
 alltests: $(OBJS) ../libfkstring.a
 	gcc $(LDFLAGS) -static -o alltests $(OBJS) -lfkstring -lm
 
+# Dynamically linked against libc so Valgrind can intercept malloc()/free();
+# it can't track the heap of the -static alltests binary.
+alltests-memcheck: $(OBJS) ../libfkstring.a
+	gcc $(LDFLAGS) -o alltests-memcheck $(OBJS) ../libfkstring.a -lm
+
 %.o: %.c framework.h ../fkstring.h ../fkstring_internal.h Makefile
 	gcc $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f alltests *.o
+	rm -f alltests alltests-memcheck *.o

@@ -22,6 +22,10 @@ LGPL-2.1 licensed.
 - Run the automated test suite: `make check` (alias: `make test`) — builds
   `libfkstring.a`, then builds and runs `tests/alltests`. Exits nonzero if
   any test fails, so `make check` itself reports an error in that case.
+- Run the suite under Valgrind: `make memcheck` — builds and runs
+  `tests/alltests-memcheck`, the same tests linked dynamically against libc
+  (Valgrind can't intercept `malloc()` in the `-static` `alltests`). Exits
+  nonzero on any test failure, leak, or memory error.
 
 `tests/alltests` is a from-scratch assertion-based suite (no external test
 framework) living in `tests/`: one `test_<fn>.c` file per `fkstring.c`/

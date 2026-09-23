@@ -299,3 +299,10 @@ function. Run it with:
 ```sh
 make check
 ```
+
+To also check for memory leaks and errors under Valgrind (which must be
+installed), run:
+
+```sh
+make memcheck
+```
