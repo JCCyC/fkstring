@@ -36,6 +36,7 @@ size_t fkrtrim(fkstring *fks);
 size_t fktrim(fkstring *fks);
 fkstring **fksplit(const fkstring *src, char delim);
 void fkarraydestroy(fkstring **fka);
+fkstring *fkjoin(fkstring **arr, const char *sep);
 int fkstrcmp(const fkstring *a, const fkstring *b);
 int fkstrcasecmp(const fkstring *a, const fkstring *b);
 int fkstreq(const fkstring *a, const fkstring *b);

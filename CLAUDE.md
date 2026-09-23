@@ -61,10 +61,12 @@ below are easy to miss):
   `fkstrcatone`, all funneling through the static `fkstrcat_internal`),
   truncation, `fksubstr`, `fkremove`, trimming (`fkltrim`/`fkrtrim`/
   `fktrim`, which funnel through `fkremove`/`fkstrtrunc` rather than
-  duplicating the shift/truncate logic), and `fksplit`/`fkarraydestroy`
-  (the only functions dealing in `fkstring **` arrays — `fksplit` builds
-  each part via `fksubstr` and NULL-terminates the array; `fkarraydestroy`
-  is its matching destructor, walking to that NULL terminator), and
+  duplicating the shift/truncate logic), and `fksplit`/`fkjoin`/
+  `fkarraydestroy` (the only functions dealing in `fkstring **` arrays —
+  `fksplit` builds each part via `fksubstr` and NULL-terminates the array;
+  `fkjoin` is its inverse, summing lengths via `fkaddlen` first so it
+  allocates once; `fkarraydestroy` is the array's destructor, walking to
+  that NULL terminator), and
   comparison (`fkstrcmp`/`fkstrcasecmp`, both funneling through the static
   `fkstrcmp_internal`, plus `fkstreq`). Comparison conventions: results are
   normalized to -1/0/1, `NULL` sorts before any `fkstring` (two `NULL`s are
@@ -134,8 +136,8 @@ A backlog of proposed additions, numbered so a session can be asked to "do
 Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
-roughly by usefulness (#1 comparison, #2 search and #3 formatted append are
-done); the top remaining one, #4, is the inverse of the existing `fksplit`.
+roughly by usefulness (#1 comparison, #2 search, #3 formatted append and #4
+join are done); the top remaining one is #5, insert.
 
 **Cross-cutting concerns for every item below:**
 
@@ -154,12 +156,6 @@ done); the top remaining one, #4, is the inverse of the existing `fksplit`.
 - *NUL safety.* Everything must honor `len` and tolerate `cstr == NULL` for
   empty strings: use `memcmp`/`memchr`/`memmem`, never `strcmp`/`strchr`/
   `strstr` on `cstr`.
-
-### Tier 1 — basic gaps
-
-4. **Join: `fkjoin(fkstring **arr, const char *sep)`.** Inverse of
-   `fksplit`, over the same NULL-terminated array. Pre-compute the total
-   length so it allocates exactly once.
 
 ### Tier 2 — editing primitives
 

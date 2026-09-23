@@ -16,6 +16,7 @@ SRCS=framework.c \
      test_fkremove.c \
      test_fktrim.c \
      test_fksplit.c \
+     test_fkjoin.c \
      test_fkstrcmp.c \
      test_fkstrfind.c \
      test_fkstrchr.c \

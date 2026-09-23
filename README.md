@@ -178,6 +178,24 @@ fkstring **parts = fksplit(s, ','); /* {"a", "b", "c", NULL} */
 fkarraydestroy(parts);
 ```
 
+#### `fkstring *fkjoin(fkstring **arr, const char *sep);`
+Inverse of `fksplit()`: concatenates the elements of the NULL-terminated
+array `arr` into a newly allocated `fkstring`, with the C string `sep` placed
+between consecutive elements (not before the first or after the last). Empty
+elements still get their separators, so `fkjoin(fksplit(s, ','), ",")`
+reproduces `s`. The total length is computed first, so the result is
+allocated only once. Embedded NULs in the elements are preserved. A `NULL`
+`sep` is treated as `""`. An empty array (just the `NULL` terminator) yields
+an empty `fkstring`. Returns `NULL` if `arr` is `NULL`. `arr` and its
+elements are left untouched.
+
+```c
+fkstring **parts = fksplit(s, ',');
+fkstring *csv = fkjoin(parts, ", "); /* "a, b, c" */
+fkarraydestroy(parts);
+fkstrdestroy(csv);
+```
+
 #### `fkstring *fksprintf(const char *fmt, ...);`
 #### `fkstring *fkvsprintf(const char *fmt, va_list ap);`
 Create a new `fkstring` formatted using `printf()` semantics. They are

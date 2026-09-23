@@ -354,6 +354,54 @@ void fkarraydestroy(fkstring **fka)
 	free(fka);
 }
 
+/* Inverse of fksplit(): the total length is summed first (via fkaddlen())
+ * so the result is allocated exactly once. A NULL sep joins with nothing. */
+fkstring *fkjoin(fkstring **arr, const char *sep)
+{
+	size_t		seplen, total, i, pos;
+	fkstring	*result;
+
+	if (!arr)
+		return NULL;
+
+	seplen = sep ? strlen(sep) : 0;
+	total = 0;
+	for (i = 0; arr[i]; i++)
+	{
+		if (i > 0)
+			total = fkaddlen(total, seplen);
+		total = fkaddlen(total, arr[i]->len);
+	}
+
+	result = fkstrnewb(NULL, 0);
+	if (total == 0)
+		return result;
+
+	result->alloc = allocforlen(total);
+	result->cstr = malloc(result->alloc);
+	if (!result->cstr)
+		fkpanic(FKSTRERR_MEMALLOC);
+
+	pos = 0;
+	for (i = 0; arr[i]; i++)
+	{
+		if (i > 0 && seplen)
+		{
+			memcpy(result->cstr + pos, sep, seplen);
+			pos += seplen;
+		}
+		if (arr[i]->len)
+		{
+			memcpy(result->cstr + pos, arr[i]->cstr, arr[i]->len);
+			pos += arr[i]->len;
+		}
+	}
+	result->cstr[pos] = '\0';
+	result->len = pos;
+
+	return result;
+}
+
 /* ASCII-only case folding, deliberately not the locale-dependent tolower()
  * (same rationale as isfkspace()). */
 static unsigned char fkfoldcase(unsigned char c)

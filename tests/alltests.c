@@ -13,6 +13,7 @@ extern test_suite fksubstr_suite;
 extern test_suite fkremove_suite;
 extern test_suite fktrim_suite;
 extern test_suite fksplit_suite;
+extern test_suite fkjoin_suite;
 extern test_suite fkstrcmp_suite;
 extern test_suite fkstrfind_suite;
 extern test_suite fkstrchr_suite;
@@ -34,6 +35,7 @@ int main(void)
 		fkremove_suite,
 		fktrim_suite,
 		fksplit_suite,
+		fkjoin_suite,
 		fkstrcmp_suite,
 		fkstrfind_suite,
 		fkstrchr_suite,
