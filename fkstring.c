@@ -354,3 +354,70 @@ void fkarraydestroy(fkstring **fka)
 
 	free(fka);
 }
+
+/* ASCII-only case folding, deliberately not the locale-dependent tolower()
+ * (same rationale as isfkspace()). */
+static unsigned char fkfoldcase(unsigned char c)
+{
+	return (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
+}
+
+/* Shared by fkstrcmp()/fkstrcasecmp(): NULL sorts before any fkstring
+ * (two NULLs are equal), then bytes are compared over the shorter length,
+ * with ties broken by length. The cstr pointers are only touched when
+ * minlen > 0, since an empty fkstring's cstr is NULL. */
+static int fkstrcmp_internal(const fkstring *a, const fkstring *b, int fold)
+{
+	size_t	minlen, i;
+	int	r;
+
+	if (!a || !b)
+		return (a ? 1 : 0) - (b ? 1 : 0);
+
+	minlen = a->len < b->len ? a->len : b->len;
+	if (minlen > 0)
+	{
+		if (fold)
+		{
+			for (i = 0; i < minlen; i++)
+			{
+				unsigned char ca = fkfoldcase(a->cstr[i]);
+				unsigned char cb = fkfoldcase(b->cstr[i]);
+
+				if (ca != cb)
+					return ca < cb ? -1 : 1;
+			}
+		}
+		else
+		{
+			r = memcmp(a->cstr, b->cstr, minlen);
+			if (r)
+				return r < 0 ? -1 : 1;
+		}
+	}
+
+	if (a->len == b->len)
+		return 0;
+	return a->len < b->len ? -1 : 1;
+}
+
+int fkstrcmp(const fkstring *a, const fkstring *b)
+{
+	return fkstrcmp_internal(a, b, 0);
+}
+
+int fkstrcasecmp(const fkstring *a, const fkstring *b)
+{
+	return fkstrcmp_internal(a, b, 1);
+}
+
+int fkstreq(const fkstring *a, const fkstring *b)
+{
+	if (!a || !b)
+		return a == b;
+
+	if (a->len != b->len)
+		return 0;
+
+	return a->len == 0 || memcmp(a->cstr, b->cstr, a->len) == 0;
+}

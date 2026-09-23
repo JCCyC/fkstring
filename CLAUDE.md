@@ -70,7 +70,13 @@ below are easy to miss):
   duplicating the shift/truncate logic), and `fksplit`/`fkarraydestroy`
   (the only functions dealing in `fkstring **` arrays — `fksplit` builds
   each part via `fksubstr` and NULL-terminates the array; `fkarraydestroy`
-  is its matching destructor, walking to that NULL terminator).
+  is its matching destructor, walking to that NULL terminator), and
+  comparison (`fkstrcmp`/`fkstrcasecmp`, both funneling through the static
+  `fkstrcmp_internal`, plus `fkstreq`). Comparison conventions: results are
+  normalized to -1/0/1, `NULL` sorts before any `fkstring` (two `NULL`s are
+  equal), and case folding is ASCII-only (`fkfoldcase`), deliberately not
+  locale-dependent `tolower()`, for the same reason the trims use
+  `isfkspace` instead of `isspace()`.
 - `fkstdio.c` — I/O-adjacent constructors: `fksprintf`, `fkstrwrite`,
   `fkstrread`.
 - `fkstrerr.c` — the `errmsgs[]` string table indexed by `FKSTRERR_*`.
@@ -118,8 +124,9 @@ A backlog of proposed additions, numbered so a session can be asked to "do
 Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
-roughly by usefulness; the top three (#1, #2, #3) remove the most common
-reasons users currently fall back to NUL-scanning libc calls on `fkcstr()`.
+roughly by usefulness; the top ones (#2, #3 — #1, comparison, is done)
+remove the most common reasons users currently fall back to NUL-scanning
+libc calls on `fkcstr()`.
 
 **Cross-cutting concerns for every item below:**
 
@@ -137,11 +144,6 @@ reasons users currently fall back to NUL-scanning libc calls on `fkcstr()`.
 
 ### Tier 1 — basic gaps
 
-1. **Comparison: `fkstrcmp(a, b)`, `fkstrcasecmp(a, b)`, `fkstreq(a, b)`.**
-   `memcmp` over `min(len)`, ties broken by length. `fkstreq` short-circuits
-   on differing lengths (the payoff of tracking `len`). Today users must
-   `strcmp(fkcstr(a), fkcstr(b))`, which mishandles embedded NULs and
-   crashes on empty strings (`cstr == NULL`).
 2. **Search: `fkstrfind(hay, needle, start)`, `fkstrfindc(hay, cstr,
    start)`, `fkstrchr(fks, c, start)`, `fkstrrchr(fks, c)`, plus
    `fkstartswith`/`fkendswith`.** Return a `size_t` offset, with a sentinel

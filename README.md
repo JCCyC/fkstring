@@ -154,6 +154,32 @@ fkarraydestroy(parts);
 #### `fkstring *fksprintf(const char *fmt, ...);`
 Creates a new `fkstring` formatted using `printf()` semantics.
 
+### Comparison
+
+#### `int fkstrcmp(const fkstring *a, const fkstring *b);`
+#### `int fkstrcasecmp(const fkstring *a, const fkstring *b);`
+Compare `a` and `b` byte by byte (as `unsigned char`, like `memcmp()`) over
+the shorter of the two lengths; if that prefix is equal, the shorter string
+sorts first. Returns -1, 0, or 1. Unlike `strcmp(fkcstr(a), fkcstr(b))`,
+these compare past embedded NUL bytes and are safe on empty strings (whose
+`cstr` is `NULL`). A `NULL` argument sorts before any `fkstring`, including
+an empty one; two `NULL`s compare equal. `fkstrcasecmp()` folds ASCII
+`A`–`Z` to lowercase only. It is locale-independent and does not fold
+non-ASCII bytes.
+
+#### `int fkstreq(const fkstring *a, const fkstring *b);`
+Returns 1 if `a` and `b` have the same length and contents, 0 otherwise.
+Returns 0 immediately when the lengths differ, without looking at the
+contents. `fkstreq(NULL, NULL)` is 1; `NULL` never equals a non-`NULL`
+`fkstring`.
+
+```c
+fkstring *a = fkstrnew("Hello"), *b = fkstrnew("hello");
+fkstreq(a, b);      /* 0 */
+fkstrcmp(a, b);     /* -1: 'H' (0x48) < 'h' (0x68) */
+fkstrcasecmp(a, b); /* 0 */
+```
+
 ### I/O
 
 #### `ssize_t fkstrwrite(int fd, const fkstring *fks);`
