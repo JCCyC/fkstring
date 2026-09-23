@@ -206,7 +206,7 @@ size_t fkremove(fkstring *fstr, size_t start, size_t len)
 		len = fstr->len - start;
 
 	if (len < (fstr->len - start))
-		memcpy(&fstr->cstr[start], &fstr->cstr[start + len], fstr->len - start - len);
+		memmove(&fstr->cstr[start], &fstr->cstr[start + len], fstr->len - start - len);
 
 	if (!fkstrtrunc(fstr, fstr->len - len))
 		return 0;
