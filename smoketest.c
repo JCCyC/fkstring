@@ -13,7 +13,7 @@ void fkshow(fkstring *fks)
 		printf("Len = %3zu, Alloc = %3zu, Str = '", fkstrlen(fks), fkstrsize(fks));
 		fflush(stdout);
 		fkstrwrite(1, fks);
-		write(1, "'\n", 2);
+		if (write(1, "'\n", 2)) {}
 	}
 }
 

@@ -1,6 +1,6 @@
 PREFIX=/usr/local
 
-CFLAGS=-I. -Wall -fpic
+CFLAGS=-I. -Wall -O2 -fpic
 LDFLAGS=-L. -Wall -fpic
 
 all: libfkstring.a libfkstring.so smoketest

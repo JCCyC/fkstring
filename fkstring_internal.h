@@ -24,7 +24,7 @@ extern const char *errmsgs[];
 static inline void fkpanic(int cause)
 {
 	if (cause)
-		write(2, errmsgs[cause], strlen(errmsgs[cause]));
+		if (write(2, errmsgs[cause], strlen(errmsgs[cause]))) {}	/* nothing to do on failure; if() silences -Wunused-result */
 	exit(253);
 }
 
