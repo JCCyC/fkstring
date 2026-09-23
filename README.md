@@ -291,7 +291,7 @@ Creates a new `fkstring` by reading up to `count` bytes from file
 descriptor `fd`. Returns `NULL` on a read error (negative return from
 `read()`); returns an empty `fkstring` at end of file.
 
-## Tests / demo
+## Tests
 
 The `tests/` directory holds an automated test suite covering every public
 function. Run it with:
