@@ -28,6 +28,8 @@ fkstring *fkstrdup(const fkstring *fks);
 fkstring *fkstrcat(fkstring *dst, const fkstring *src);
 fkstring *fkstrcatc(fkstring *dst, const char *src);
 fkstring *fkstrcatone(fkstring *dst, char c);
+fkstring *fkinsert(fkstring *fks, size_t pos, const fkstring *src);
+fkstring *fkinsertc(fkstring *fks, size_t pos, const char *cstr);
 fkstring *fksubstr(const fkstring *fstr, size_t start, size_t len);
 fkstring *fkstrtrunc(fkstring *fks, size_t newlen);
 size_t fkremove(fkstring *fstr, size_t start, size_t len);
@@ -48,6 +50,8 @@ int fkstartswith(const fkstring *fks, const fkstring *prefix);
 int fkstartswithc(const fkstring *fks, const char *prefix);
 int fkendswith(const fkstring *fks, const fkstring *suffix);
 int fkendswithc(const fkstring *fks, const char *suffix);
+fkstring *fkreplace(fkstring *fks, const fkstring *old, const fkstring *new, size_t max_count);
+fkstring *fkreplacec(fkstring *fks, const char *old, const char *new, size_t max_count);
 
 /* fkstdio.c */
 fkstring *fksprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));

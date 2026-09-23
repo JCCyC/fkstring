@@ -12,6 +12,7 @@ SRCS=framework.c \
      test_fkstrtrunc.c \
      test_fkstrcat.c \
      test_fkstrcatf.c \
+     test_fkinsert.c \
      test_fksubstr.c \
      test_fkremove.c \
      test_fktrim.c \
@@ -21,6 +22,7 @@ SRCS=framework.c \
      test_fkstrfind.c \
      test_fkstrchr.c \
      test_fkstartswith.c \
+     test_fkreplace.c \
      test_fksprintf.c \
      test_fkstrwrite.c \
      test_fkstrread.c \

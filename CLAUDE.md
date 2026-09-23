@@ -61,9 +61,13 @@ below are easy to miss):
   installed to `$(PREFIX)/include` by `make install`** alongside
   `fkstring.h` — it isn't private to the build.
 - `fkstring.c` — core operations: construction (`fkstrnew`, `fkstrnewb`),
-  destruction, duplication, concatenation (`fkstrcat`/`fkstrcatc`/
-  `fkstrcatone`, all funneling through the static `fkstrcat_internal`),
-  truncation, `fksubstr`, `fkremove`, trimming (`fkltrim`/`fkrtrim`/
+  destruction, duplication, concatenation and insertion (`fkstrcat`/
+  `fkstrcatc`/`fkstrcatone` and `fkinsert`/`fkinsertc`, all funneling
+  through the static `fkinsert_internal`, with appending being an insert at
+  `pos == len`; it copies `src` aside first when it points into `dst`'s own
+  buffer, since growth can move that buffer), replacement (`fkreplace`/
+  `fkreplacec`, via the static `fkreplace_internal`, which counts matches
+  first, then builds the result in one fresh buffer), truncation, `fksubstr`, `fkremove`, trimming (`fkltrim`/`fkrtrim`/
   `fktrim`, which funnel through `fkremove`/`fkstrtrunc` rather than
   duplicating the shift/truncate logic), and `fksplit`/`fkjoin`/
   `fkarraydestroy` (the only functions dealing in `fkstring **` arrays —
@@ -130,7 +134,7 @@ Cross-cutting conventions a change should preserve:
    `read()`/`write()` semantics (`fkstrwrite`) return `ssize_t`; everything
    else that can legitimately return a byte count uses `size_t` (e.g.
    `fkremove`). Because these are unsigned, bounds must be checked *before*
-   subtracting (see how `fkstrcat_internal`, `fkremove`, and `fksubstr`
+   subtracting (see how `fkinsert`, `fkremove`, and `fksubstr`
    compare against `fstr->len` before computing a difference) to avoid
    unsigned underflow/wraparound.
 
@@ -140,20 +144,20 @@ A backlog of proposed additions, numbered so a session can be asked to "do
 Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
-roughly by usefulness (#1 comparison, #2 search, #3 formatted append and #4
-join are done); the top remaining one is #5, insert.
+roughly by usefulness (#1 comparison, #2 search, #3 formatted append, #4
+join, #5 insert and #6 replace are done); the top remaining one is #7,
+capacity control.
 
 **Cross-cutting concerns for every item below:**
 
 - *Overflow in length arithmetic.* Use `fkaddlen(a, b)`
   (`fkstring_internal.h`) for length sums in new code. It `fkpanic()`s with
   `FKSTRERR_OVERFLOW` on wraparound, the same non-recoverable policy as OOM.
-  Older code (`fkstrcat_internal`'s `dst->len + srclen`) doesn't use it yet,
-  and `allocforlen()`'s `len * _bumpfactor` is still unchecked. That
+  `allocforlen()`'s `len * _bumpfactor` is still unchecked. That
   multiply wraps at `SIZE_MAX / 143`, only about 30 MB on 32-bit.
 - *Return-type rule* (settled by `fkstrcatf`). Mutators that append or
   otherwise grow/rewrite `dst` return `dst` for chaining, or `NULL` for
-  invalid arguments (`fkstrcatf`, `fkstrtrunc`, and #5/#6; `fkstrcat`/
+  invalid arguments (`fkstrcatf`, `fkstrtrunc`, `fkinsert`, `fkreplace`; `fkstrcat`/
   `fkstrcatc`/`fkstrcatone` return `dst` but don't yet NULL-check it).
   Mutators that only remove bytes return a `size_t` count or length
   (`fkremove`, trims, #8).
@@ -163,11 +167,6 @@ join are done); the top remaining one is #5, insert.
 
 ### Tier 2 — editing primitives
 
-5. **Insert: `fkinsert(fks, pos, src)` / `fkinsertc(fks, pos, cstr)`.**
-   Complements `fkremove`. Bounds-check `pos` before any subtraction.
-6. **Replace: `fkreplace(fks, old, new, max_count)`.** Build on #2 plus #5/
-   `fkremove`, but prefer a two-pass count-then-build so it grows once
-   instead of per match. Depends on #2.
 7. **Capacity control: `fkreserve(fks, n)`, `fkshrinktofit(fks)`.**
    Design tension to resolve first: `fkreserve` on an empty string conflicts
    with the `len == 0 ⇒ alloc == 0` invariant. Options: relax the invariant

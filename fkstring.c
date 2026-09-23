@@ -160,16 +160,34 @@ fkstring *fkstrdup(const fkstring *fks)
 	return newfkstr;
 }
 
-/* Assumes src has nonzero length, but dst may have zero length. */
-
-static fkstring *fkstrcat_internal(fkstring *dst, const char *src, size_t srclen)
+/* Shared by the fkstrcat*() and fkinsert*() families; appending is inserting
+ * at pos == dst->len. Assumes pos <= dst->len; dst may have zero length.
+ * src may point into dst's own buffer (e.g. fkstrcat(s, s)), so it's copied
+ * aside first: growing dst can move the buffer, and shifting the tail can
+ * overwrite src's bytes. */
+static fkstring *fkinsert_internal(fkstring *dst, size_t pos, const char *src, size_t srclen)
 {
-	size_t newalloc;
-	char *newbuf;
+	size_t newlen, newalloc;
+	char *newbuf, *tmp = NULL;
 
-	if ((dst->alloc - dst->len) <= (srclen))
+	if (srclen == 0)
+		return dst;
+
+	newlen = fkaddlen(dst->len, srclen);
+
+	if (dst->cstr && (uintptr_t)src >= (uintptr_t)dst->cstr &&
+	    (uintptr_t)src < (uintptr_t)dst->cstr + dst->alloc)
 	{
-		newalloc = allocforlen(dst->len + srclen);
+		tmp = malloc(srclen);
+		if (!tmp)
+			fkpanic(FKSTRERR_MEMALLOC);
+		memcpy(tmp, src, srclen);
+		src = tmp;
+	}
+
+	if (dst->alloc <= newlen)
+	{
+		newalloc = allocforlen(newlen);
 		if (dst->len)
 			newbuf = realloc(dst->cstr, newalloc);
 		else
@@ -181,32 +199,49 @@ static fkstring *fkstrcat_internal(fkstring *dst, const char *src, size_t srclen
 		dst->cstr = newbuf;
 		dst->alloc = newalloc;
 	}
-	memcpy(&dst->cstr[dst->len], src, srclen);
-	dst->len += srclen;
+	if (pos < dst->len)
+		memmove(&dst->cstr[pos + srclen], &dst->cstr[pos], dst->len - pos);
+	memcpy(&dst->cstr[pos], src, srclen);
+	dst->len = newlen;
 	dst->cstr[dst->len] = '\0';
 
+	free(tmp);
 	return dst;
 }
 
 fkstring *fkstrcat(fkstring *dst, const fkstring *src)
 {
-	if (src->len)
-		return fkstrcat_internal(dst, src->cstr, src->len);
-	else
-		return dst;
+	return fkinsert_internal(dst, dst->len, src->cstr, src->len);
 }
 
 fkstring *fkstrcatc(fkstring *dst, const char *src)
 {
 	if (src && src[0])
-		return fkstrcat_internal(dst, src, strlen(src));
+		return fkinsert_internal(dst, dst->len, src, strlen(src));
 	else
 		return dst;
 }
 
 fkstring *fkstrcatone(fkstring *dst, char c)
 {
-	return fkstrcat_internal(dst, &c, 1);
+	return fkinsert_internal(dst, dst->len, &c, 1);
+}
+
+/* pos == fks->len appends; pos > fks->len is an invalid argument. */
+fkstring *fkinsert(fkstring *fks, size_t pos, const fkstring *src)
+{
+	if (!fks || !src || pos > fks->len)
+		return NULL;
+
+	return fkinsert_internal(fks, pos, src->cstr, src->len);
+}
+
+fkstring *fkinsertc(fkstring *fks, size_t pos, const char *cstr)
+{
+	if (!fks || !cstr || pos > fks->len)
+		return NULL;
+
+	return fkinsert_internal(fks, pos, cstr, strlen(cstr));
 }
 
 size_t fkremove(fkstring *fstr, size_t start, size_t len)
@@ -601,4 +636,86 @@ int fkendswithc(const fkstring *fks, const char *suffix)
 		return 0;
 
 	return fkendswith_internal(fks, suffix, strlen(suffix));
+}
+
+/* Shared by fkreplace()/fkreplacec(). Two passes: count the (non-overlapping,
+ * left-to-right) matches, then build the result into one exactly-sized
+ * buffer, so fks grows at most once. Building into a fresh buffer also makes
+ * it safe for old/new to alias fks itself. max_count == 0 means no limit; an
+ * empty old matches nothing. */
+static fkstring *fkreplace_internal(fkstring *fks, const char *old, size_t oldlen,
+				    const char *new, size_t newlen, size_t max_count)
+{
+	size_t	count, pos, match, reslen, resalloc, outpos, i;
+	char	*buf;
+
+	if (oldlen == 0)
+		return fks;
+
+	count = 0;
+	pos = 0;
+	while ((max_count == 0 || count < max_count) &&
+	       (match = fkstrfind_internal(fks, old, oldlen, pos)) != FKSTR_NPOS)
+	{
+		count++;
+		pos = match + oldlen;
+	}
+	if (count == 0)
+		return fks;
+
+	/* count * oldlen <= fks->len, so only the count * newlen side can overflow. */
+	if (newlen && count > SIZE_MAX / newlen)
+		fkpanic(FKSTRERR_OVERFLOW);
+	reslen = fkaddlen(fks->len - count * oldlen, count * newlen);
+
+	if (reslen == 0)
+	{
+		free(fks->cstr);
+		fks->cstr = NULL;
+		fks->len = fks->alloc = 0;
+		return fks;
+	}
+
+	resalloc = allocforlen(reslen);
+	buf = malloc(resalloc);
+	if (!buf)
+		fkpanic(FKSTRERR_MEMALLOC);
+
+	pos = outpos = 0;
+	for (i = 0; i < count; i++)
+	{
+		match = fkstrfind_internal(fks, old, oldlen, pos);
+		memcpy(buf + outpos, fks->cstr + pos, match - pos);
+		outpos += match - pos;
+		if (newlen)
+		{
+			memcpy(buf + outpos, new, newlen);
+			outpos += newlen;
+		}
+		pos = match + oldlen;
+	}
+	memcpy(buf + outpos, fks->cstr + pos, fks->len - pos);
+	buf[reslen] = '\0';
+
+	free(fks->cstr);
+	fks->cstr = buf;
+	fks->len = reslen;
+	fks->alloc = resalloc;
+	return fks;
+}
+
+fkstring *fkreplace(fkstring *fks, const fkstring *old, const fkstring *new, size_t max_count)
+{
+	if (!fks || !old || !new)
+		return NULL;
+
+	return fkreplace_internal(fks, old->cstr, old->len, new->cstr, new->len, max_count);
+}
+
+fkstring *fkreplacec(fkstring *fks, const char *old, const char *new, size_t max_count)
+{
+	if (!fks || !old || !new)
+		return NULL;
+
+	return fkreplace_internal(fks, old, strlen(old), new, strlen(new), max_count);
 }

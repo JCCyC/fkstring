@@ -230,6 +230,35 @@ static int test_fkstrcatone_embedded_nul(char *errbuf, size_t errbuflen)
 	return 1;
 }
 
+static int test_fkstrcat_self_with_growth(char *errbuf, size_t errbuflen)
+{
+	/* Regression: the realloc() could move dst->cstr before src (the same
+	 * buffer) was read, a use-after-free. */
+	fkstring *dst = fkstrnew("0123456789abcdef0123");	/* len 20, alloc 29: no room to double */
+	size_t oldalloc = fkstrsize(dst);
+
+	fkstrcat(dst, dst);
+	CHECK(fkstrsize(dst) > oldalloc, "expected growth, alloc stayed %zu", fkstrsize(dst));
+	CHECK(fkstrlen(dst) == 40, "expected len 40, got %zu", fkstrlen(dst));
+	CHECK(strcmp(fkcstr(dst), "0123456789abcdef01230123456789abcdef0123") == 0,
+	      "expected the string doubled, got '%s'", fkcstr(dst));
+	fkstrdestroy(dst);
+	return 1;
+}
+
+static int test_fkstrcatc_from_own_buffer_with_growth(char *errbuf, size_t errbuflen)
+{
+	fkstring *dst = fkstrnew("0123456789abcdef0123");
+
+	fkstrcatc(dst, fkcstr(dst) + 10);	/* "abcdef0123" */
+	fkstrcatc(dst, fkcstr(dst));		/* whole thing, forcing growth */
+	CHECK(strcmp(fkcstr(dst), "0123456789abcdef0123abcdef0123"
+				  "0123456789abcdef0123abcdef0123") == 0,
+	      "content mismatch, got '%s'", fkcstr(dst));
+	fkstrdestroy(dst);
+	return 1;
+}
+
 static test_case fkstrcat_tests[] = {
 	{ "fkstrcat() with an empty src leaves dst completely untouched", test_fkstrcat_empty_src_leaves_dst_untouched },
 	{ "fkstrcat() with both dst and src empty stays empty", test_fkstrcat_both_empty },
@@ -238,6 +267,8 @@ static test_case fkstrcat_tests[] = {
 	{ "fkstrcat() that exhausts slack triggers growth to allocforlen()", test_fkstrcat_triggers_growth },
 	{ "fkstrcat() repeated 60 times accumulates content correctly across growths", test_fkstrcat_repeated_growth_stress },
 	{ "fkstrcat() of a string onto itself, when no growth is needed, doubles it correctly", test_fkstrcat_self_without_growth },
+	{ "fkstrcat() of a string onto itself that forces growth doubles it correctly", test_fkstrcat_self_with_growth },
+	{ "fkstrcatc() from a pointer into dst's own buffer, including across growth", test_fkstrcatc_from_own_buffer_with_growth },
 	{ "fkstrcatc() with a NULL src leaves dst untouched", test_fkstrcatc_null_src },
 	{ "fkstrcatc() with an empty src leaves dst untouched", test_fkstrcatc_empty_src },
 	{ "fkstrcatc() into an empty dst", test_fkstrcatc_into_empty_dst },

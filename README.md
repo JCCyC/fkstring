@@ -111,6 +111,40 @@ Appends a null-terminated C string `src` to `dst` in place. Returns `dst`.
 #### `fkstring *fkstrcatone(fkstring *dst, char c);`
 Appends a single character `c` to `dst` in place. Returns `dst`.
 
+The `src` of any of the `fkstrcat` functions may be `dst` itself, or point
+into `dst`'s buffer: `fkstrcat(s, s)` doubles `s`.
+
+#### `fkstring *fkinsert(fkstring *fks, size_t pos, const fkstring *src);`
+#### `fkstring *fkinsertc(fkstring *fks, size_t pos, const char *cstr);`
+Insert `src` (or the null-terminated C string `cstr`) into `fks` at byte
+offset `pos`, in place, shifting the bytes from `pos` onward up. `pos ==
+fkstrlen(fks)` appends. Returns `fks` for chaining, or `NULL`, leaving `fks`
+unchanged, if any argument is `NULL` or `pos > fkstrlen(fks)`. Inserting an
+empty string is a no-op. As with `fkstrcat()`, `src` may be `fks` itself or
+point into its buffer. `fkinsert()` is the counterpart of `fkremove()`:
+
+```c
+fkstring *s = fkstrnew("Demon");
+fkinsertc(s, 3, "oti"); /* "Demon" -> "Demotion" */
+```
+
+#### `fkstring *fkreplace(fkstring *fks, const fkstring *old, const fkstring *new, size_t max_count);`
+#### `fkstring *fkreplacec(fkstring *fks, const char *old, const char *new, size_t max_count);`
+Replace occurrences of `old` in `fks` with `new`, in place, scanning left to
+right. Matches don't overlap (`"aaa"` holds one `"aa"`), and replacement text
+is never rescanned. At most `max_count` matches are replaced, or all of them
+if `max_count` is 0. An empty `old` matches nothing, so the call is a no-op.
+Matching and replacement honor embedded NULs. The matches are counted first,
+so `fks` is reallocated at most once however many there are, and not at all
+when nothing matches. `old` and `new` may alias `fks`. Returns `fks` for
+chaining, or `NULL` if any argument is `NULL`.
+
+```c
+fkstring *s = fkstrnew("a-b-c");
+fkreplacec(s, "-", ", ", 0); /* "a, b, c" */
+fkreplacec(s, ", ", "", 1);  /* "ab, c" */
+```
+
 #### `fkstring *fkstrcatf(fkstring *dst, const char *fmt, ...);`
 #### `fkstring *fkstrcatvf(fkstring *dst, const char *fmt, va_list ap);`
 Append `printf()`-formatted output to `dst` in place, writing directly into
