@@ -9,22 +9,6 @@ int _deflatefactor = FKSTR_DEFAULT_DEFLATEFACTOR;
 size_t _minalloc = FKSTR_DEFAULT_MIN_ALLOC;
 size_t _sprintftry = FKSTR_DEFAULT_SPRINTF_TRY;
 
-void fkpanic(int cause)
-{
-	if (cause)
-		write(2, errmsgs[cause], strlen(errmsgs[cause]));
-	exit(253);
-}
-
-size_t allocforlen(size_t len)
-{
-	size_t proposed = (len * _bumpfactor / 100) + 1;
-
-	if (proposed < _minalloc)
-		proposed = _minalloc;
-	return proposed;
-}
-
 void fkstrdestroy(fkstring *fks)
 {
 	if (fks)

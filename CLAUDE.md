@@ -59,7 +59,8 @@ below are easy to miss):
   `fkstrsize`/`fkcstr` accessor macros, and all public function prototypes.
 - `fkstring_internal.h` — growth-strategy tunables (`_bumpfactor`,
   `_deflatefactor`, `_minalloc`, `_sprintftry`), error codes (`FKSTRERR_*`),
-  and internal helpers (`fkpanic`, `allocforlen`). **This header is also
+  and internal helpers (`fkpanic`, `allocforlen`), both `static inline`
+  so they get inlined despite `-fpic`. **This header is also
   installed to `$(PREFIX)/include` by `make install`** alongside
   `fkstring.h` — it isn't private to the build.
 - `fkstring.c` — core operations: construction (`fkstrnew`, `fkstrnewb`),
@@ -97,7 +98,7 @@ Cross-cutting conventions a change should preserve:
    `fkstring.h`: if `len == 0`, then `alloc == 0` and `cstr == NULL`. Any new
    constructor/mutator needs to keep both of these intact.
 3. **OOM handling is non-recoverable by design.** There's no error-return
-   path for allocation failure: `fkpanic()` (`fkstring.c`) writes a message
+   path for allocation failure: `fkpanic()` (`fkstring_internal.h`) writes a message
    from `errmsgs[]` to stderr and calls `exit(253)` unconditionally whenever
    `malloc`/`realloc` fails. `NULL` returns from API functions are reserved
    for invalid-argument cases (e.g. a `NULL` `fkstring *`), not OOM. New
