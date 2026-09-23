@@ -111,3 +111,102 @@ Cross-cutting conventions a change should preserve:
    subtracting (see how `fkstrcat_internal`, `fkremove`, and `fksubstr`
    compare against `fstr->len` before computing a difference) to avoid
    unsigned underflow/wraparound.
+
+## Future features
+
+A backlog of proposed additions, numbered so a session can be asked to "do
+Future feature #N". When one is implemented, remove its entry here (and
+renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
+function convention, and document it in `README.md`. Items are ordered
+roughly by usefulness; the top three (#1, #2, #3) remove the most common
+reasons users currently fall back to NUL-scanning libc calls on `fkcstr()`.
+
+**Cross-cutting concerns for every item below:**
+
+- *Overflow in length arithmetic.* `dst->len + src->len` and
+  `allocforlen()`'s `* _bumpfactor / 100` can wrap for huge inputs. Consider
+  a checked-add helper that `fkpanic()`s on overflow (same non-recoverable
+  policy as OOM), and use it in new code.
+- *Return-type consistency.* Existing mutators return either `fkstring *`
+  (`fkstrcat`, `fkstrtrunc`) or `size_t` (`fkremove`, trims). New functions
+  should follow one documented rule (e.g. "returns `dst` for chaining" vs.
+  "returns bytes affected") — decide and state it when adding the first one.
+- *NUL safety.* Everything must honor `len` and tolerate `cstr == NULL` for
+  empty strings: use `memcmp`/`memchr`/`memmem`, never `strcmp`/`strchr`/
+  `strstr` on `cstr`.
+
+### Tier 1 — basic gaps
+
+1. **Comparison: `fkstrcmp(a, b)`, `fkstrcasecmp(a, b)`, `fkstreq(a, b)`.**
+   `memcmp` over `min(len)`, ties broken by length. `fkstreq` short-circuits
+   on differing lengths (the payoff of tracking `len`). Today users must
+   `strcmp(fkcstr(a), fkcstr(b))`, which mishandles embedded NULs and
+   crashes on empty strings (`cstr == NULL`).
+2. **Search: `fkstrfind(hay, needle, start)`, `fkstrfindc(hay, cstr,
+   start)`, `fkstrchr(fks, c, start)`, `fkstrrchr(fks, c)`, plus
+   `fkstartswith`/`fkendswith`.** Return a `size_t` offset, with a sentinel
+   `#define FKSTR_NPOS ((size_t)-1)` for not-found. Use `memchr`/`memmem`;
+   `memmem` is a GNU/BSD extension, so feature-test it or provide a fallback.
+3. **Formatted append: `fkstrcatf(dst, fmt, ...)`, plus `fkvsprintf` and
+   `fkstrcatvf` (`va_list`) variants.** Refactor `make_message()`'s
+   two-pass `vsnprintf` to write directly at `dst->cstr + dst->len` after an
+   `allocforlen()` grow; `fksprintf` then becomes `fkstrcatf` on an empty
+   string. The `va_list` variants let users build their own wrappers (e.g.
+   loggers). Keep the `format(printf, ...)` attribute.
+4. **Join: `fkjoin(fkstring **arr, const char *sep)`.** Inverse of
+   `fksplit`, over the same NULL-terminated array. Pre-compute the total
+   length so it allocates exactly once.
+
+### Tier 2 — editing primitives
+
+5. **Insert: `fkinsert(fks, pos, src)` / `fkinsertc(fks, pos, cstr)`.**
+   Complements `fkremove`. Bounds-check `pos` before any subtraction.
+6. **Replace: `fkreplace(fks, old, new, max_count)`.** Build on #2 plus #5/
+   `fkremove`, but prefer a two-pass count-then-build so it grows once
+   instead of per match. Depends on #2.
+7. **Capacity control: `fkreserve(fks, n)`, `fkshrinktofit(fks)`.**
+   Design tension to resolve first: `fkreserve` on an empty string conflicts
+   with the `len == 0 ⇒ alloc == 0` invariant. Options: relax the invariant
+   (`len == 0 ⇒ cstr == NULL` *or* `cstr[0] == '\0'`), or make reserve a
+   no-op on empty strings (much less useful). Also, a reservation would be
+   undone by the next `fkstrtrunc()` under the 350% `_deflatefactor`
+   threshold — likely needs a per-string "don't shrink below N" field.
+   Discuss with the user before implementing; it touches the struct.
+8. **Character-set trims: `fkltrimset(fks, const char *set)`,
+   `fkrtrimset`, `fktrimset`.** Generalize the `\s`-only trims; the existing
+   `fkltrim`/`fkrtrim`/`fktrim` can become thin wrappers.
+9. **Richer splitting: `fksplitstr(src, const fkstring *delim)`,
+   `fksplitany(src, const char *delims)`.** Consider a `max_parts` argument
+   and/or a flag to collapse empty fields (`"a,,b"` vs. `"a  b"` need
+   different behavior). Reuse `fkarraydestroy` as the destructor.
+
+### Tier 3 — I/O conveniences
+
+10. **Line reading: `fkreadline(FILE *fp)` / `fkreadline_fd(int fd)`.**
+    Arbitrary-length line reads. The `FILE *` version can use
+    `getc_unlocked`; the fd version needs a buffering strategy (one byte per
+    `read()` is slow) — decide where leftover bytes live.
+11. **Whole-file reads: `fkslurp(int fd)` / `fkslurpfile(const char
+    *path)`.** Use `fstat` as a size hint for regular files; fall back to
+    `_bumpfactor` growth for pipes/sockets.
+12. **`fkfwrite(FILE *fp, const fkstring *fks)`.** stdio counterpart to
+    `fkstrwrite`; preserves embedded NULs (unlike `fputs(fkcstr(...))`).
+
+### Tier 4 — nice to have
+
+13. **Case conversion: `fktoupper(fks)` / `fktolower(fks)`.** In place, via
+    `<ctype.h>`. Document that it is byte-wise, not UTF-8 aware.
+14. **Hashing: `fkstrhash(const fkstring *fks)`.** FNV-1a (or similar) over
+    `len` bytes, for users building hash tables keyed by `fkstring`.
+15. **Non-owning views: `FKSTR_LIT("abc")` / `fkstrview(ptr, len)`.**
+    Produce a stack `fkstring` usable as a `const fkstring *` argument
+    without heap allocation (e.g. `fkstrcat(dst, &FKSTR_LIT(", "))`). Must
+    define and ideally enforce that views never reach mutators or
+    `fkstrdestroy` — e.g. an `alloc == 0 && len > 0` "borrowed" marker.
+16. **Escaping: `fkescape(fks)` / `fkunescape(fks)`.** C-style escaping of
+    non-printables and embedded NULs; useful for debugging, and could
+    simplify `smoketest.c`'s `fkshow()`.
+17. **Invariant checking: `FKSTR_DEBUG` build flag with
+    `fkstrcheck(const fkstring *fks)`.** Asserts `cstr[len] == '\0'`,
+    `len < alloc`, and the `len == 0` rule. Wire it into the test suite
+    after every mutating operation.
