@@ -55,7 +55,8 @@ below are easy to miss):
 - `fkstring.h` — public API: the `fkstring` struct, the `fkstrlen`/
   `fkstrsize`/`fkcstr` accessor macros, and all public function prototypes.
 - `fkstring_internal.h` — growth-strategy tunables (`_bumpfactor`,
-  `_deflatefactor`, `_minalloc`, `_sprintftry`, `_slurptry`), error codes (`FKSTRERR_*`),
+  `_deflatefactor`, `_minalloc`, `_sprintftry`, `_slurptry`,
+  `_catbufsize`), error codes (`FKSTRERR_*`),
   and internal helpers (`fkpanic`, `allocforlen`), both `static inline`
   so they get inlined despite `-fpic`. **This header is also
   installed to `$(PREFIX)/include` by `make install`** alongside
@@ -105,7 +106,12 @@ below are easy to miss):
   plus 2 so the EOF-confirming `read()` needs no growth, sizes the first
   buffer. It's only a hint: `/proc` files report 0. Otherwise it starts
   from `_slurptry` and grows via `allocforlen()`. Leftover slack is
-  `fkfit()`ted past the `fkstrtrunc()` deflate threshold).
+  `fkfit()`ted past the `fkstrtrunc()` deflate threshold), and
+  `fkcatfd`/`fkcatf` (plus the `fkcat(path)` macro for fd 1, in
+  `fkstring.h`), both via the static `fkcat_internal`, which streams a
+  file to an fd or `FILE *` through one `_catbufsize` buffer without
+  building an `fkstring`. They return `ssize_t` bytes copied (saturating at
+  `SSIZE_MAX`), or -1 with `errno` (`EINVAL` for `NULL` arguments).
   `fkstring.h` includes `<stdio.h>` for `fkreadline`'s `FILE *`.
 - `fkstrerr.c` — the `errmsgs[]` string table indexed by `FKSTRERR_*`.
 
@@ -164,7 +170,7 @@ renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
 roughly by usefulness (#1 comparison, #2 search, #3 formatted append, #4
 join, #5 insert, #6 replace, #7 capacity control, #10 line reading and
-#11 whole-file reads are done); the top remaining one is #8, character-set trims.
+#11 whole-file reads are done; `fkcat*` was added outside the backlog); the top remaining one is #8, character-set trims.
 
 **Cross-cutting concerns for every item below:**
 

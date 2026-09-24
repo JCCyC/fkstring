@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <errno.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <fkstring.h>
@@ -283,4 +284,81 @@ fkstring *fkslurpfile(const char *path)
 	close(fd);
 	errno = saved_errno;
 	return fks;
+}
+
+/*
+ * Copies path to either fd (when f is NULL) or f, streaming it through one
+ * _catbufsize buffer rather than slurping it, so memory use doesn't depend
+ * on the file's size. Short write()s and EINTR are retried; fwrite() does
+ * its own retrying. Returns the bytes copied, saturating at SSIZE_MAX.
+ */
+static ssize_t fkcat_internal(const char *path, int fd, FILE *f)
+{
+	char	*buf, *p;
+	size_t	total = 0;
+	ssize_t	n, w;
+	int	in, saved_errno;
+
+	if (!path)
+	{
+		errno = EINVAL;
+		return -1;
+	}
+	if ((in = open(path, O_RDONLY | O_CLOEXEC)) < 0)
+		return -1;
+	if ((buf = malloc(_catbufsize)) == NULL)
+		fkpanic(FKSTRERR_MEMALLOC);
+
+	for (;;)
+	{
+		n = read(in, buf, _catbufsize);
+		if (n == 0)
+			break;
+		if (n < 0)
+		{
+			if (errno == EINTR)
+				continue;
+			goto fail;
+		}
+		total = (size_t)n > SSIZE_MAX - total ? SSIZE_MAX : total + (size_t)n;
+		if (f)
+		{
+			if (fwrite(buf, 1, (size_t)n, f) != (size_t)n)
+				goto fail;
+		}
+		else
+			for (p = buf; n > 0; p += w, n -= w)
+				if ((w = write(fd, p, (size_t)n)) < 0)
+				{
+					if (errno != EINTR)
+						goto fail;
+					w = 0;
+				}
+	}
+
+	free(buf);
+	close(in);
+	return (ssize_t)total;
+
+fail:
+	saved_errno = errno;
+	free(buf);
+	close(in);
+	errno = saved_errno;
+	return -1;
+}
+
+ssize_t fkcatfd(const char *path, int fd)
+{
+	return fkcat_internal(path, fd, NULL);
+}
+
+ssize_t fkcatf(const char *path, FILE *f)
+{
+	if (!f)
+	{
+		errno = EINVAL;
+		return -1;
+	}
+	return fkcat_internal(path, -1, f);
 }

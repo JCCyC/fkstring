@@ -68,5 +68,8 @@ fkstring *fkstrread(int fd, size_t count);
 fkstring *fkreadline(FILE *fp);
 fkstring *fkslurp(int fd);
 fkstring *fkslurpfile(const char *path);
+ssize_t fkcatfd(const char *path, int fd);
+ssize_t fkcatf(const char *path, FILE *f);
+#define fkcat(path) fkcatfd((path), STDOUT_FILENO)
 
 #endif /* __FKSTRING_H__ */

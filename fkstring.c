@@ -24,6 +24,7 @@ int _deflatefactor = FKSTR_DEFAULT_DEFLATEFACTOR;
 size_t _minalloc = FKSTR_DEFAULT_MIN_ALLOC;
 size_t _sprintftry = FKSTR_DEFAULT_SPRINTF_TRY;
 size_t _slurptry = FKSTR_DEFAULT_SLURP_TRY;
+size_t _catbufsize = FKSTR_DEFAULT_CAT_BUFSIZE;
 
 void fkstrdestroy(fkstring *fks)
 {

@@ -22,7 +22,8 @@ Claude Code to accelerate development._
   factor, and truncation only `realloc()`s once a deflate factor is crossed.
   This amortizes the cost of repeated appends/truncations. See
   `fkstring_internal.h` for the tunable globals (`_bumpfactor`,
-  `_deflatefactor`, `_minalloc`, `_sprintftry`, `_slurptry`).
+  `_deflatefactor`, `_minalloc`, `_sprintftry`, `_slurptry`,
+  `_catbufsize`).
 - Buffers are kept null-terminated after `len` bytes as a convenience for
   interop with C APIs, but `len` is authoritative — `fkstrnewb()` lets you
   store binary data containing embedded NUL bytes, and the length-aware
@@ -411,6 +412,35 @@ fkstring *conf = fkslurpfile("/etc/hostname");
 if (conf)
 	fkstrwrite(1, conf);
 fkstrdestroy(conf);
+```
+
+#### `ssize_t fkcatfd(const char *path, int fd);`
+#### `ssize_t fkcatf(const char *path, FILE *f);`
+#### `fkcat(path)`
+Copy the contents of the file at `path` to file descriptor `fd`
+(`fkcatfd()`) or to stream `f` (`fkcatf()`). `fkcat(path)` is a macro for
+`fkcatfd(path, STDOUT_FILENO)`. No `fkstring` is built: the file is streamed
+through a single `_catbufsize`-byte (64 KiB) buffer. Memory use therefore
+doesn't depend on the file's size, and the `fkslurp()` warning about files
+that never end doesn't apply (though `fkcat("/dev/zero")` still never
+returns). Embedded NUL bytes are copied as-is. Reads interrupted by a signal
+(`EINTR`) are retried, and so are short writes to `fd`.
+
+Returns the number of bytes copied, capped at `SSIZE_MAX`. Returns -1 with
+`errno` set if `path` is `NULL` or `f` is `NULL` (`EINVAL`), if `open()`
+fails, if a read fails (e.g. `EISDIR` for a directory), or if a write fails.
+Bytes already copied before a failure stay written.
+
+`fkcatf()` writes with `fwrite()`, so its output follows anything already
+buffered in `f`. It may still be sitting in `f`'s buffer when the function
+returns; call `fflush(f)` if that matters. `fkcatfd()` bypasses stdio
+entirely. So before mixing it with `printf()` on the same descriptor (e.g.
+`fkcat()` after `printf()`), `fflush(stdout)`, or the output can come out
+of order.
+
+```c
+if (fkcat("/etc/hostname") < 0)
+	perror("/etc/hostname");
 ```
 
 ## Tests

@@ -29,6 +29,7 @@ extern test_suite fkstrwrite_suite;
 extern test_suite fkstrread_suite;
 extern test_suite fkreadline_suite;
 extern test_suite fkslurp_suite;
+extern test_suite fkcat_suite;
 
 int main(void)
 {
@@ -62,6 +63,7 @@ int main(void)
 		fkstrread_suite,
 		fkreadline_suite,
 		fkslurp_suite,
+		fkcat_suite,
 	};
 
 	return run_suites(suites, sizeof(suites) / sizeof(suites[0])) ? 0 : 1;
