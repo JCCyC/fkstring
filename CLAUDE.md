@@ -116,13 +116,16 @@ below are easy to miss):
   `fksplit` builds each part via `fksubstr` and NULL-terminates the array;
   `fkjoin` is its inverse, summing lengths via `fkaddlen` first so it
   allocates once; `fkarraydestroy` is the array's destructor, walking to
-  that NULL terminator), and
+  that NULL terminator),
   comparison (`fkstrcmp`/`fkstrcasecmp`, both funneling through the static
-  `fkstrcmp_internal`, plus `fkstreq`). Comparison conventions: results are
+  `fkstrcmp_internal`, plus `fkstreq`), and case conversion (`fktoupper`/
+  `fktolower`, via the static `fkconvcase_internal`, in place and never
+  reallocating). Comparison conventions: results are
   normalized to -1/0/1, `NULL` sorts before any `fkstring` (two `NULL`s are
   equal), and case folding is ASCII-only (`fkfoldcase`), deliberately not
   locale-dependent `tolower()`, for the same reason the trims use
-  `isfkspace` instead of `isspace()`.
+  `isfkspace` instead of `isspace()`. Case conversion uses the same
+  ASCII-only rule, so `fktolower` agrees with `fkstrcasecmp`.
   Search (`fkstrfind`/`fkstrfindc`, both funneling through the static
   `fkstrfind_internal`, plus `fkstrchr`/`fkstrrchr`, and `fkstartswith`/
   `fkstartswithc` and `fkendswith`/`fkendswithc`, each pair funneling
@@ -217,8 +220,8 @@ renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md` and in a man page
 (a new group page or a `.so` stub, listed in `dist_man3_MANS`). Items are ordered
 roughly by usefulness (#1 comparison, #2 search, #3 formatted append, #4
-join, #5 insert, #6 replace, #7 capacity control, #10 line reading and
-#11 whole-file reads are done; `fkcat*` was added outside the backlog); the top remaining one is #8, character-set trims.
+join, #5 insert, #6 replace, #7 capacity control, #10 line reading,
+#11 whole-file reads and #13 case conversion are done; `fkcat*` was added outside the backlog); the top remaining one is #8, character-set trims.
 
 **Cross-cutting concerns for every item below:**
 
@@ -231,7 +234,8 @@ join, #5 insert, #6 replace, #7 capacity control, #10 line reading and
 - *Return-type rule* (settled by `fkstrcatf`). Mutators that append or
   otherwise grow/rewrite `dst` return `dst` for chaining, or `NULL` for
   invalid arguments (`fkstrcat`/`fkstrcatc`/`fkstrcatone`, `fkstrcatf`,
-  `fkstrtrunc`, `fkinsert`, `fkreplace`, `fkslack`, `fkfit`).
+  `fkstrtrunc`, `fkinsert`, `fkreplace`, `fkslack`, `fkfit`, `fktoupper`/
+  `fktolower`).
   Mutators that only remove bytes return a `size_t` count or length
   (`fkremove`, trims, #8).
 - *NUL safety.* Everything must honor `len` and tolerate `cstr == NULL` for
@@ -255,8 +259,6 @@ join, #5 insert, #6 replace, #7 capacity control, #10 line reading and
 
 ### Tier 4 — nice to have
 
-13. **Case conversion: `fktoupper(fks)` / `fktolower(fks)`.** In place, via
-    `<ctype.h>`. Document that it is byte-wise, not UTF-8 aware.
 14. **Hashing: `fkstrhash(const fkstring *fks)`.** FNV-1a (or similar) over
     `len` bytes, for users building hash tables keyed by `fkstring`.
 15. **Non-owning views: `FKSTR_LIT("abc")` / `fkstrview(ptr, len)`.**

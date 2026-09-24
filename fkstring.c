@@ -547,6 +547,34 @@ static unsigned char fkfoldcase(unsigned char c)
 	return (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
 }
 
+/* Shared by fktoupper()/fktolower(): maps ASCII letters in place over all
+ * len bytes (embedded NULs included), like fkfoldcase() and for the same
+ * reason. Never reallocates, so the len == 0 invariant is untouched. */
+static fkstring *fkconvcase_internal(fkstring *fks, int upper)
+{
+	char	from = upper ? 'a' : 'A';
+	char	to = upper ? 'A' : 'a';
+	size_t	i;
+
+	if (!fks)
+		return NULL;
+
+	for (i = 0; i < fks->len; i++)
+		if (fks->cstr[i] >= from && fks->cstr[i] <= from + ('z' - 'a'))
+			fks->cstr[i] = fks->cstr[i] - from + to;
+	return fks;
+}
+
+fkstring *fktoupper(fkstring *fks)
+{
+	return fkconvcase_internal(fks, 1);
+}
+
+fkstring *fktolower(fkstring *fks)
+{
+	return fkconvcase_internal(fks, 0);
+}
+
 /* Shared by fkstrcmp()/fkstrcasecmp(): NULL sorts before any fkstring
  * (two NULLs are equal), then bytes are compared over the shorter length,
  * with ties broken by length. The cstr pointers are only touched when

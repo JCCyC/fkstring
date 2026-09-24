@@ -68,6 +68,8 @@ dist_man3_MANS = \
 	man/fkstrversion.3 \
 	man/fkstrwrite.3 \
 	man/fksubstr.3 \
+	man/fktolower.3 \
+	man/fktoupper.3 \
 	man/fktrim.3 \
 	man/fkvsprintf.3
 
@@ -99,6 +101,7 @@ tests_alltests_SOURCES = \
 	tests/test_fksplit.c \
 	tests/test_fkjoin.c \
 	tests/test_fkstrcmp.c \
+	tests/test_fktoupper.c \
 	tests/test_fkstrfind.c \
 	tests/test_fkstrchr.c \
 	tests/test_fkstartswith.c \

@@ -60,6 +60,8 @@ fkstring *fkjoin(fkstring **arr, const char *sep);
 int fkstrcmp(const fkstring *a, const fkstring *b);
 int fkstrcasecmp(const fkstring *a, const fkstring *b);
 int fkstreq(const fkstring *a, const fkstring *b);
+fkstring *fktoupper(fkstring *fks);
+fkstring *fktolower(fkstring *fks);
 size_t fkstrfind(const fkstring *hay, const fkstring *needle, size_t start);
 size_t fkstrfindc(const fkstring *hay, const char *needle, size_t start);
 size_t fkstrchr(const fkstring *fks, char c, size_t start);

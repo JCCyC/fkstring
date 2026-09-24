@@ -3,6 +3,7 @@ Unreleased
 
 * New make release target: distcheck plus a .sha256 checksum file for
   each release archive.
+* New fktoupper and fktolower: in-place, ASCII-only case conversion.
 
 fkstring 0.9.0 (2026-09-24)
 ===========================

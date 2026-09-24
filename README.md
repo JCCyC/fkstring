@@ -279,6 +279,19 @@ Remove whitespace (the regex `\s` class: space, `\t`, `\n`, `\r`, `\f`, `\v`)
 from the left, right, or both ends of `fks` in place. Returns the new
 length (0 if `fks` is `NULL`).
 
+#### `fkstring *fktoupper(fkstring *fks);`
+#### `fkstring *fktolower(fkstring *fks);`
+Convert ASCII `a`–`z` to uppercase, or `A`–`Z` to lowercase, in place over
+all `fkstrlen(fks)` bytes (embedded NULs included). The conversion is
+byte-wise and locale-independent, with the same folding as
+`fkstrcasecmp()`: it is not UTF-8 aware, and non-ASCII bytes are left
+unchanged. Never reallocates. Returns `fks`, or `NULL` if `fks` is `NULL`.
+
+```c
+fkstring *s = fkstrnew("Hello, World!");
+fktoupper(s); /* "HELLO, WORLD!" */
+```
+
 ### Deriving new strings
 
 #### `fkstring *fksubstr(const fkstring *fstr, size_t start, size_t len);`

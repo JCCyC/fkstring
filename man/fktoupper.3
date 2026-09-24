@@ -1,0 +1,69 @@
+.TH FKTOUPPER 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fktoupper, fktolower \- convert the case of an fkstring in place
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fktoupper(fkstring *" fks );
+.BI "fkstring *fktolower(fkstring *" fks );
+.fi
+.SH DESCRIPTION
+.BR fktoupper ()
+converts the ASCII letters
+.BR a \(en z
+in
+.I fks
+to uppercase, and
+.BR fktolower ()
+converts
+.BR A \(en Z
+to lowercase, in place.
+All
+.I len
+bytes are converted, including any after an embedded NUL byte.
+.PP
+The conversion is byte-wise and ASCII-only.
+It does not depend on the locale, unlike
+.BR toupper (3)
+and
+.BR tolower (3),
+and it leaves every byte outside
+.BR A \(en Z
+and
+.BR a \(en z
+unchanged.
+In particular, it is not UTF-8 aware: multibyte characters such as
+.B \(aq\('e\(aq
+are not converted.
+.BR fktolower ()
+folds case exactly as
+.BR fkstrcasecmp (3)
+does, so two strings compare equal under
+.BR fkstrcasecmp ()
+if and only if their lowercased copies are equal under
+.BR fkstreq (3).
+.PP
+The buffer is never reallocated, and an empty
+.I fks
+is left unchanged.
+.SH RETURN VALUE
+.IR fks ,
+for chaining, or NULL if
+.I fks
+is NULL.
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("Hello, World!");
+\&
+fktoupper(s);    /* s is "HELLO, WORLD!" */
+fktolower(s);    /* s is "hello, world!" */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkstrcmp (3),
+.BR toupper (3)
