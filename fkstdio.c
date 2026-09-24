@@ -149,3 +149,48 @@ fkstring *fkstrread(int fd, size_t count)
 	}
 	return newfkstr;
 }
+
+/*
+ * Reads one line of arbitrary length from fp, including its trailing '\n'
+ * (absent only on a final line not ending in one). Embedded NULs are kept.
+ * Returns NULL for a NULL fp, or when EOF or an error comes before any byte
+ * is read; a partial line read before an error is returned as-is, so check
+ * ferror(fp) to tell the two apart. The stream is locked once for the whole
+ * line so each byte can use getc_unlocked().
+ */
+fkstring *fkreadline(FILE *fp)
+{
+	fkstring	*line;
+	size_t		newalloc;
+	char		*newbuf;
+	int		c;
+
+	if (!fp)
+		return NULL;
+
+	line = fkstrnew(NULL);
+	flockfile(fp);
+	while ((c = getc_unlocked(fp)) != EOF)
+	{
+		if (line->len + 1 >= line->alloc)
+		{
+			newalloc = allocforlen(fkaddlen(line->len, 1));
+			if ((newbuf = realloc(line->cstr, newalloc)) == NULL)
+				fkpanic(FKSTRERR_MEMALLOC);
+			line->cstr = newbuf;
+			line->alloc = newalloc;
+		}
+		line->cstr[line->len++] = (char)c;
+		if (c == '\n')
+			break;
+	}
+	funlockfile(fp);
+
+	if (line->len == 0)
+	{
+		fkstrdestroy(line);
+		return NULL;
+	}
+	line->cstr[line->len] = '\0';
+	return line;
+}

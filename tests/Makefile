@@ -4,9 +4,11 @@ LDFLAGS=-L.. -Wall -fpic
 SRCS=framework.c \
      test_allocforlen.c \
      test_fkaddlen.c \
+     test_fkmullen.c \
      test_fkpanic.c \
      test_fkstrerr.c \
      test_fkstrnew.c \
+     test_fkalloc.c \
      test_fkstrdestroy.c \
      test_fkstrdup.c \
      test_fkstrtrunc.c \
@@ -26,6 +28,7 @@ SRCS=framework.c \
      test_fksprintf.c \
      test_fkstrwrite.c \
      test_fkstrread.c \
+     test_fkreadline.c \
      alltests.c
 OBJS=$(SRCS:.c=.o)
 

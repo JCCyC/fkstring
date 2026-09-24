@@ -60,7 +60,8 @@ below are easy to miss):
   so they get inlined despite `-fpic`. **This header is also
   installed to `$(PREFIX)/include` by `make install`** alongside
   `fkstring.h` — it isn't private to the build.
-- `fkstring.c` — core operations: construction (`fkstrnew`, `fkstrnewb`),
+- `fkstring.c` — core operations: construction (`fkstrnew`, `fkstrnewb`,
+  and `fkalloc`/`fkcalloc`, via the static `fkalloc_internal`),
   destruction, duplication, concatenation and insertion (`fkstrcat`/
   `fkstrcatc`/`fkstrcatone` and `fkinsert`/`fkinsertc`, all funneling
   through the static `fkinsert_internal`, with appending being an insert at
@@ -94,8 +95,11 @@ below are easy to miss):
   test the fallback, build with
   `make CFLAGS="-I. -Wall -O2 -fpic -DFKSTR_HAVE_MEMMEM=0"` after `make clean`.
 - `fkstdio.c` — formatting and I/O: `fkstrcatvf` (the formatting core),
-  its wrappers `fkstrcatf`/`fkvsprintf`/`fksprintf`, plus `fkstrwrite` and
-  `fkstrread`.
+  its wrappers `fkstrcatf`/`fkvsprintf`/`fksprintf`, plus `fkstrwrite`,
+  `fkstrread`, and `fkreadline` (one line from a `FILE *`, via
+  `getc_unlocked()` under a single `flockfile()`; keeps the `'\n'`, returns
+  `NULL` at EOF-with-nothing-read, unlike `fkstrread`'s empty `fkstring`).
+  `fkstring.h` includes `<stdio.h>` for `fkreadline`'s `FILE *`.
 - `fkstrerr.c` — the `errmsgs[]` string table indexed by `FKSTRERR_*`.
 
 Cross-cutting conventions a change should preserve:
@@ -145,13 +149,14 @@ Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
 roughly by usefulness (#1 comparison, #2 search, #3 formatted append, #4
-join, #5 insert and #6 replace are done); the top remaining one is #7,
+join, #5 insert, #6 replace and #10 line reading are done); the top remaining one is #7,
 capacity control.
 
 **Cross-cutting concerns for every item below:**
 
 - *Overflow in length arithmetic.* Use `fkaddlen(a, b)`
-  (`fkstring_internal.h`) for length sums in new code. It `fkpanic()`s with
+  (`fkstring_internal.h`) for length sums in new code, and `fkmullen(a, b)`
+  for products (as in `fkcalloc`). It `fkpanic()`s with
   `FKSTRERR_OVERFLOW` on wraparound, the same non-recoverable policy as OOM.
   `allocforlen()`'s `len * _bumpfactor` is still unchecked. That
   multiply wraps at `SIZE_MAX / 143`, only about 30 MB on 32-bit.
@@ -185,10 +190,6 @@ capacity control.
 
 ### Tier 3 — I/O conveniences
 
-10. **Line reading: `fkreadline(FILE *fp)` / `fkreadline_fd(int fd)`.**
-    Arbitrary-length line reads. The `FILE *` version can use
-    `getc_unlocked`; the fd version needs a buffering strategy (one byte per
-    `read()` is slow) — decide where leftover bytes live.
 11. **Whole-file reads: `fkslurp(int fd)` / `fkslurpfile(const char
     *path)`.** Use `fstat` as a size hint for regular files; fall back to
     `_bumpfactor` growth for pipes/sockets.

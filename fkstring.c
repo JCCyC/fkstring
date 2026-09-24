@@ -98,6 +98,48 @@ fkstring *fkstrnewb(const void *buf, size_t len)
 	return newfkstr;
 }
 
+/* Common to fkalloc()/fkcalloc(): a len-byte fkstring, zeroed on request. */
+static fkstring *fkalloc_internal(size_t len, int zero)
+{
+	size_t		newalloc;
+	fkstring	*newfkstr;
+
+	newfkstr = malloc(sizeof(fkstring));
+	if (!newfkstr)
+		fkpanic(FKSTRERR_MEMALLOC);
+
+	if (len)
+	{
+		newalloc = allocforlen(len);
+
+		newfkstr->cstr = zero ? calloc(newalloc, 1) : malloc(newalloc);
+		if (!newfkstr->cstr)
+			fkpanic(FKSTRERR_MEMALLOC);
+
+		newfkstr->cstr[len] = '\0';
+		newfkstr->len = len;
+		newfkstr->alloc = newalloc;
+	}
+	else
+	{
+		newfkstr->len = 0;
+		newfkstr->alloc = 0;
+		newfkstr->cstr = NULL;
+	}
+
+	return newfkstr;
+}
+
+fkstring *fkalloc(size_t size)
+{
+	return fkalloc_internal(size, 0);
+}
+
+fkstring *fkcalloc(size_t nmemb, size_t size)
+{
+	return fkalloc_internal(fkmullen(nmemb, size), 1);
+}
+
 fkstring *fkstrtrunc(fkstring *fks, size_t newlen)
 {
 	if (!fks)

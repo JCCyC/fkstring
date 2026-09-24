@@ -2,9 +2,11 @@
 
 extern test_suite allocforlen_suite;
 extern test_suite fkaddlen_suite;
+extern test_suite fkmullen_suite;
 extern test_suite fkpanic_suite;
 extern test_suite fkstrerr_suite;
 extern test_suite fkstrnew_suite;
+extern test_suite fkalloc_suite;
 extern test_suite fkstrdestroy_suite;
 extern test_suite fkstrdup_suite;
 extern test_suite fkstrtrunc_suite;
@@ -24,11 +26,13 @@ extern test_suite fksprintf_suite;
 extern test_suite fkstrcatf_suite;
 extern test_suite fkstrwrite_suite;
 extern test_suite fkstrread_suite;
+extern test_suite fkreadline_suite;
 
 int main(void)
 {
 	test_suite suites[] = {
 		fkstrnew_suite,
+		fkalloc_suite,
 		fkstrdestroy_suite,
 		fkstrdup_suite,
 		fkstrcat_suite,
@@ -46,12 +50,14 @@ int main(void)
 		fkreplace_suite,
 		allocforlen_suite,
 		fkaddlen_suite,
+		fkmullen_suite,
 		fkpanic_suite,
 		fkstrerr_suite,
 		fksprintf_suite,
 		fkstrcatf_suite,
 		fkstrwrite_suite,
 		fkstrread_suite,
+		fkreadline_suite,
 	};
 
 	return run_suites(suites, sizeof(suites) / sizeof(suites[0])) ? 0 : 1;

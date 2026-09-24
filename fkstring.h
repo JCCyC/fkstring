@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 typedef struct _fkstring
 {
@@ -23,6 +24,8 @@ typedef struct _fkstring
 /* fkstring.c */
 fkstring *fkstrnew(const char *s);
 fkstring *fkstrnewb(const void *buf, size_t len);
+fkstring *fkalloc(size_t size);
+fkstring *fkcalloc(size_t nmemb, size_t size);
 void fkstrdestroy(fkstring *fks);
 fkstring *fkstrdup(const fkstring *fks);
 fkstring *fkstrcat(fkstring *dst, const fkstring *src);
@@ -60,5 +63,6 @@ fkstring *fkstrcatf(fkstring *dst, const char *fmt, ...) __attribute__((format(p
 fkstring *fkstrcatvf(fkstring *dst, const char *fmt, va_list ap) __attribute__((format(printf, 2, 0)));
 ssize_t fkstrwrite(int fd, const fkstring *fks);
 fkstring *fkstrread(int fd, size_t count);
+fkstring *fkreadline(FILE *fp);
 
 #endif /* __FKSTRING_H__ */

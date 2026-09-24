@@ -89,6 +89,17 @@ input does not need to be null-terminated and may contain embedded NUL
 bytes — use this for binary data. Passing `NULL` or `len == 0` creates an
 empty `fkstring`.
 
+#### `fkstring *fkalloc(size_t size);`
+#### `fkstring *fkcalloc(size_t nmemb, size_t size);`
+Create a new `fkstring` of length `size` (`fkalloc()`) or `nmemb * size`
+(`fkcalloc()`), modeled on `malloc()` and `calloc()`. `fkalloc()` leaves the
+`len` bytes uninitialized for the caller to fill in (e.g. with `memcpy()` or
+`read()`); `fkcalloc()` zeroes them, and they count as embedded NULs within
+`len`. Either way `cstr[len]` is a NUL terminator. A length of 0 creates an
+empty `fkstring` (`len == 0`, `cstr == NULL`). Unlike `calloc()`, an
+`nmemb * size` overflow doesn't return `NULL`; like out-of-memory, it's fatal
+(see [Design notes](#design-notes)).
+
 #### `fkstring *fkstrdup(const fkstring *fks);`
 Creates a new `fkstring` as a copy of `fks`.
 
@@ -324,6 +335,18 @@ the underlying `write()` call.
 Creates a new `fkstring` by reading up to `count` bytes from file
 descriptor `fd`. Returns `NULL` on a read error (negative return from
 `read()`); returns an empty `fkstring` at end of file.
+
+#### `fkstring *fkreadline(FILE *fp);`
+Reads one line of any length from `fp` and returns it as a new `fkstring`.
+The trailing `'\n'` is kept, so the only line without one is a last line
+that has no newline at the end. Embedded NUL bytes are preserved. Returns
+`NULL` if `fp` is `NULL`, or if end of file or a read error comes before any
+byte is read. This makes the usual loop
+`while ((line = fkreadline(fp)) != NULL)` work. It differs from
+`fkstrread()`, which returns an empty `fkstring` at EOF. If an error happens
+partway through a line, the bytes read so far are returned; use
+`ferror(fp)` to tell that apart from a normal EOF. The stream is locked once
+per line with `flockfile()`, and each byte is read with `getc_unlocked()`.
 
 ## Tests
 

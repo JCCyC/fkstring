@@ -38,6 +38,14 @@ static inline size_t fkaddlen(size_t a, size_t b)
 	return a + b;
 }
 
+/* Checked a * b, same policy as fkaddlen(). */
+static inline size_t fkmullen(size_t a, size_t b)
+{
+	if (a && b > SIZE_MAX / a)
+		fkpanic(FKSTRERR_OVERFLOW);
+	return a * b;
+}
+
 static inline size_t allocforlen(size_t len)
 {
 	size_t proposed = (len * _bumpfactor / 100) + 1;
