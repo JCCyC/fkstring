@@ -66,5 +66,7 @@ fkstring *fkstrcatvf(fkstring *dst, const char *fmt, va_list ap) __attribute__((
 ssize_t fkstrwrite(int fd, const fkstring *fks);
 fkstring *fkstrread(int fd, size_t count);
 fkstring *fkreadline(FILE *fp);
+fkstring *fkslurp(int fd);
+fkstring *fkslurpfile(const char *path);
 
 #endif /* __FKSTRING_H__ */

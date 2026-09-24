@@ -55,7 +55,7 @@ below are easy to miss):
 - `fkstring.h` — public API: the `fkstring` struct, the `fkstrlen`/
   `fkstrsize`/`fkcstr` accessor macros, and all public function prototypes.
 - `fkstring_internal.h` — growth-strategy tunables (`_bumpfactor`,
-  `_deflatefactor`, `_minalloc`, `_sprintftry`), error codes (`FKSTRERR_*`),
+  `_deflatefactor`, `_minalloc`, `_sprintftry`, `_slurptry`), error codes (`FKSTRERR_*`),
   and internal helpers (`fkpanic`, `allocforlen`), both `static inline`
   so they get inlined despite `-fpic`. **This header is also
   installed to `$(PREFIX)/include` by `make install`** alongside
@@ -99,7 +99,13 @@ below are easy to miss):
   its wrappers `fkstrcatf`/`fkvsprintf`/`fksprintf`, plus `fkstrwrite`,
   `fkstrread`, and `fkreadline` (one line from a `FILE *`, via
   `getc_unlocked()` under a single `flockfile()`; keeps the `'\n'`, returns
-  `NULL` at EOF-with-nothing-read, unlike `fkstrread`'s empty `fkstring`).
+  `NULL` at EOF-with-nothing-read, unlike `fkstrread`'s empty `fkstring`),
+  and `fkslurp`/`fkslurpfile` (fd to EOF in one `read()` loop, retrying
+  `EINTR`; for regular files `fstat()`'s size minus the current offset,
+  plus 2 so the EOF-confirming `read()` needs no growth, sizes the first
+  buffer. It's only a hint: `/proc` files report 0. Otherwise it starts
+  from `_slurptry` and grows via `allocforlen()`. Leftover slack is
+  `fkfit()`ted past the `fkstrtrunc()` deflate threshold).
   `fkstring.h` includes `<stdio.h>` for `fkreadline`'s `FILE *`.
 - `fkstrerr.c` — the `errmsgs[]` string table indexed by `FKSTRERR_*`.
 
@@ -157,8 +163,8 @@ Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
 roughly by usefulness (#1 comparison, #2 search, #3 formatted append, #4
-join, #5 insert, #6 replace, #7 capacity control and #10 line reading are
-done); the top remaining one is #8, character-set trims.
+join, #5 insert, #6 replace, #7 capacity control, #10 line reading and
+#11 whole-file reads are done); the top remaining one is #8, character-set trims.
 
 **Cross-cutting concerns for every item below:**
 
@@ -190,9 +196,6 @@ done); the top remaining one is #8, character-set trims.
 
 ### Tier 3 — I/O conveniences
 
-11. **Whole-file reads: `fkslurp(int fd)` / `fkslurpfile(const char
-    *path)`.** Use `fstat` as a size hint for regular files; fall back to
-    `_bumpfactor` growth for pipes/sockets.
 12. **`fkfwrite(FILE *fp, const fkstring *fks)`.** stdio counterpart to
     `fkstrwrite`; preserves embedded NULs (unlike `fputs(fkcstr(...))`).
 

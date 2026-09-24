@@ -11,6 +11,7 @@ extern int _bumpfactor;
 extern int _deflatefactor;
 extern size_t _minalloc;
 extern size_t _sprintftry;
+extern size_t _slurptry;
 extern const char *errmsgs[];
 
 #define FKSTRERR_SUCCESS	0
@@ -22,6 +23,7 @@ extern const char *errmsgs[];
 #define FKSTR_DEFAULT_DEFLATEFACTOR	350
 #define FKSTR_DEFAULT_MIN_ALLOC		16
 #define FKSTR_DEFAULT_SPRINTF_TRY	(3*FKSTR_DEFAULT_MIN_ALLOC)
+#define FKSTR_DEFAULT_SLURP_TRY		4096
 
 static inline void fkpanic(int cause)
 {

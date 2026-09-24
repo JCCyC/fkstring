@@ -30,6 +30,7 @@ SRCS=framework.c \
      test_fkstrwrite.c \
      test_fkstrread.c \
      test_fkreadline.c \
+     test_fkslurp.c \
      alltests.c
 OBJS=$(SRCS:.c=.o)
 

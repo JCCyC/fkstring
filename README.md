@@ -22,7 +22,7 @@ Claude Code to accelerate development._
   factor, and truncation only `realloc()`s once a deflate factor is crossed.
   This amortizes the cost of repeated appends/truncations. See
   `fkstring_internal.h` for the tunable globals (`_bumpfactor`,
-  `_deflatefactor`, `_minalloc`, `_sprintftry`).
+  `_deflatefactor`, `_minalloc`, `_sprintftry`, `_slurptry`).
 - Buffers are kept null-terminated after `len` bytes as a convenience for
   interop with C APIs, but `len` is authoritative — `fkstrnewb()` lets you
   store binary data containing embedded NUL bytes, and the length-aware
@@ -375,6 +375,43 @@ byte is read. This makes the usual loop
 partway through a line, the bytes read so far are returned; use
 `ferror(fp)` to tell that apart from a normal EOF. The stream is locked once
 per line with `flockfile()`, and each byte is read with `getc_unlocked()`.
+
+#### `fkstring *fkslurp(int fd);`
+Reads everything from file descriptor `fd`, from its current offset to end
+of file, into a new `fkstring`. Embedded NUL bytes are preserved. For a
+regular file, the size from `fstat()` (minus the current offset) sets the
+initial allocation, so the whole file is read into one buffer, with no
+reallocation. The size is only a hint, though: reading always continues
+until `read()` reports EOF. So a file that grows while it's being read, or a
+`/proc` file that reports a size of 0, is still read in full. Pipes,
+sockets, and terminals have no size hint. For those, reading starts with a
+`_slurptry`-byte (4 KiB) buffer that grows by the usual bump factor. Reads
+interrupted by a signal (`EINTR`) are retried. When a read fills much less
+of the buffer than was allocated, the excess is released, using the same
+threshold as `fkstrtrunc()`. Returns an empty `fkstring` if there is nothing
+to read. Returns `NULL` on a read error, with `errno` set by `read()`, and
+discards any bytes already read. This includes `EAGAIN` on a non-blocking
+`fd`.
+
+#### `fkstring *fkslurpfile(const char *path);`
+Opens `path` read-only, reads it in full with `fkslurp()`, and closes it.
+Returns `NULL` if `path` is `NULL`, if `open()` fails, or if the read fails.
+`errno` is preserved from the failing call.
+
+**Warning:** both functions read until end of file, and some files never
+end. Don't use them on `/dev/zero`, `/dev/urandom`, a pipe from `yes`, or
+anything else that never reports EOF. The buffer keeps growing until
+`malloc()` fails and `fkpanic()` exits, or the machine starts swapping or
+the kernel's OOM killer steps in first. You'd end up with an `fksystem`
+instead of an `fkstring`. For those, use `fkstrread()` with an explicit
+byte count.
+
+```c
+fkstring *conf = fkslurpfile("/etc/hostname");
+if (conf)
+	fkstrwrite(1, conf);
+fkstrdestroy(conf);
+```
 
 ## Tests
 
