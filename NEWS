@@ -1,6 +1,9 @@
 Unreleased
 ==========
 
+fkstring 0.9.1 (2026-09-24)
+===========================
+
 * New make release target: distcheck plus a .sha256 checksum file for
   each release archive.
 * New fktoupper and fktolower: in-place, ASCII-only case conversion.

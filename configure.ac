@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 # Keep in sync with FKSTRING_VERSION* in fkstring.h (make check enforces it).
-AC_INIT([fkstring], [0.9.0])
+AC_INIT([fkstring], [0.9.1])
 AC_CONFIG_SRCDIR([fkstring.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIRS([m4])

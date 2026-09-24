@@ -8,7 +8,7 @@ libfkstring_la_SOURCES = fkstring.c fkstdio.c fkstrerr.c
 # each release: implementation-only changes bump revision; added interfaces
 # bump current and age and zero revision; removed or changed interfaces bump
 # current and zero revision and age.
-libfkstring_la_LDFLAGS = -version-info 0:0:0
+libfkstring_la_LDFLAGS = -version-info 1:0:1
 
 # fkstring_internal.h is part of the installed API, not private to the build.
 include_HEADERS = fkstring.h fkstring_internal.h

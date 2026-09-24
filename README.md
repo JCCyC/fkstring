@@ -75,7 +75,7 @@ gcc myprog.c -lfkstring -o myprog
 ## Versioning
 
 fkstring follows [Semantic Versioning](https://semver.org/). The current
-release is 0.9.0: usable and fully tested, but while the major version is 0
+release is 0.9.1: usable and fully tested, but while the major version is 0
 the API may still change incompatibly between minor releases. `NEWS` lists
 the changes in each release.
 
