@@ -39,17 +39,27 @@ Claude Code to accelerate development._
 
 ## Building and installing
 
+fkstring uses the GNU Autotools. From a git checkout, generate `configure`
+first (this needs autoconf, automake and libtool); release tarballs made
+with `make dist` already include it:
+
 ```sh
+autoreconf -fi
+./configure
 make
 sudo make install
 ```
 
-This builds `libfkstring.a` (static) and `libfkstring.so` (shared).
-`make install` installs the libraries to
-`$(PREFIX)/lib` and the headers (`fkstring.h`, `fkstring_internal.h`) to
-`$(PREFIX)/include`, where `PREFIX` defaults to `/usr/local`. Edit `PREFIX`
-in the `Makefile` to install elsewhere. The install step runs `install -o
-root -g root`, so it needs root privileges.
+This builds and installs `libfkstring.a` (static) and `libfkstring.so`
+(shared, via libtool) under `$prefix/lib`, and the headers (`fkstring.h`,
+`fkstring_internal.h`) under `$prefix/include`. `prefix` defaults to
+`/usr/local`; pass `--prefix=DIR` to `configure` to install elsewhere, and
+the usual `--disable-shared`/`--disable-static` to build only one flavor.
+Out-of-tree builds (running `configure` from another directory) work too.
+
+`configure` checks for `memmem()` and defines `FKSTR_HAVE_MEMMEM`
+accordingly. To force the portable `memchr()`+`memcmp()` fallback, run
+`./configure ac_cv_func_memmem=no`.
 
 To use the library in your own project:
 
@@ -452,8 +462,11 @@ function. Run it with:
 make check
 ```
 
+The suite's per-test output goes to `tests/alltests.log`; run
+`./tests/alltests` directly to watch it live.
+
 To also check for memory leaks and errors under Valgrind (which must be
-installed), run:
+installed when `configure` runs), run:
 
 ```sh
 make memcheck

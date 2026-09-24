@@ -58,3 +58,21 @@ dkms.conf
 
 # Claude Code local/personal settings (machine-specific permissions)
 .claude/settings.local.json
+
+# Autotools
+Makefile
+Makefile.in
+/aclocal.m4
+/autom4te.cache/
+/build-aux/
+/config.log
+/config.status
+/configure
+/configure~
+/libtool
+/fkstring-*.tar.*
+.deps/
+.dirstamp
+.libs/
+*.log
+*.trs

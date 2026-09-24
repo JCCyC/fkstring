@@ -12,20 +12,31 @@ LGPL-2.1 licensed.
 
 ## Commands
 
-- Build everything (`libfkstring.a`, `libfkstring.so`): `make`
-- Clean build artifacts: `make clean`
-- Install system-wide: `make install` — requires root (the Makefile runs
-  `install -o root -g root`); installs to `$(PREFIX)/lib` and
-  `$(PREFIX)/include`, where `PREFIX` defaults to `/usr/local` (edit the
-  `Makefile` to change it).
+- Bootstrap (git checkout only, after editing `configure.ac`/`Makefile.am`
+  or on a fresh clone): `autoreconf -fi`, then `./configure`. Autotools with a
+  flat layout: one `configure.ac` and one top-level `Makefile.am` (no
+  `SUBDIRS`; `tests/` sources are listed there via `subdir-objects`). All
+  generated files (`configure`, `Makefile.in`, `build-aux/`, `m4/*`, ...)
+  are gitignored.
+- Build everything (`libfkstring.la`, i.e. `.libs/libfkstring.{a,so}`):
+  `make`
+- Clean build artifacts: `make clean` (`make distclean` also removes
+  `configure`'s output).
+- Install: `make install` to `$prefix/lib` and `$prefix/include`
+  (`--prefix`, default `/usr/local`).
 - Compile a single translation unit directly, e.g.: `gcc -I. -Wall -fpic -c fkstring.c -o fkstring.o`
 - Run the automated test suite: `make check` (alias: `make test`) — builds
-  `libfkstring.a`, then builds and runs `tests/alltests`. Exits nonzero if
-  any test fails, so `make check` itself reports an error in that case.
-- Run the suite under Valgrind: `make memcheck` — builds and runs
-  `tests/alltests-memcheck`, the same tests linked dynamically against libc
-  (Valgrind can't intercept `malloc()` in the `-static` `alltests`). Exits
+  and runs `tests/alltests` through Automake's test driver, which writes the
+  per-test output to `tests/alltests.log` (run `./tests/alltests` directly
+  to see it live). Exits nonzero if any test fails.
+- Run the suite under Valgrind: `make memcheck` (custom rule in
+  `Makefile.am`; `configure` looks for `valgrind`). `tests/alltests` is
+  linked with libtool's `-static`, which links `libfkstring` statically but
+  libc dynamically, so the same binary serves both targets: it needs no
+  libtool wrapper script and Valgrind can still intercept `malloc()`. Exits
   nonzero on any test failure, leak, or memory error.
+- Release tarball: `make dist`; `make distcheck` also verifies a VPATH
+  build, `make check` and install/uninstall from it.
 
 `tests/alltests` is a from-scratch assertion-based suite (no external test
 framework) living in `tests/`: one `test_<fn>.c` file per `fkstring.c`/
@@ -59,7 +70,7 @@ below are easy to miss):
   `_catbufsize`), error codes (`FKSTRERR_*`),
   and internal helpers (`fkpanic`, `allocforlen`), both `static inline`
   so they get inlined despite `-fpic`. **This header is also
-  installed to `$(PREFIX)/include` by `make install`** alongside
+  installed to `$prefix/include` by `make install`** alongside
   `fkstring.h` — it isn't private to the build.
 - `fkstring.c` — core operations: construction (`fkstrnew`, `fkstrnewb`,
   and `fkalloc`/`fkcalloc`, via the static `fkalloc_internal`),
@@ -93,9 +104,11 @@ below are easy to miss):
   through the static `fkmemmem`, which calls `memmem()` when
   `FKSTR_HAVE_MEMMEM` (auto-detected at the top of `fkstring.c`, which also
   `#define`s `_GNU_SOURCE`) is 1, and otherwise uses a `memchr`+`memcmp`
-  fallback. `make check` only exercises the `memmem()` path on glibc; to
-  test the fallback, build with
-  `make CFLAGS="-I. -Wall -O2 -fpic -DFKSTR_HAVE_MEMMEM=0"` after `make clean`.
+  fallback. Under autotools, `configure` tests for `memmem()` and passes
+  `-DFKSTR_HAVE_MEMMEM=0/1` itself, so the in-source guess is only a
+  fallback for non-autotools builds. `make check` only exercises the
+  `memmem()` path on glibc; to test the fallback, run
+  `./configure ac_cv_func_memmem=no && make clean check`.
 - `fkstdio.c` — formatting and I/O: `fkstrcatvf` (the formatting core),
   its wrappers `fkstrcatf`/`fkvsprintf`/`fksprintf`, plus `fkstrwrite`,
   `fkstrread`, and `fkreadline` (one line from a `FILE *`, via
