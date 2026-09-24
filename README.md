@@ -186,6 +186,30 @@ static void logmsg(fkstring *log, const char *fmt, ...)
 Truncates `fks` to `newlen` bytes in place. Returns `fks`, or `NULL` if
 `fks` is `NULL`. No-op if `newlen >= fkstrlen(fks)`.
 
+#### `fkstring *fkslack(fkstring *fks, size_t n);`
+Ensures `fks` has room for at least `n` more bytes past its current length,
+growing its buffer to exactly `fkstrlen(fks) + n + 1` bytes if needed, so
+that the next `n` bytes of appends or inserts don't reallocate. Returns
+`fks`, or `NULL` if `fks` is `NULL`. It's a no-op on an empty `fks`, which
+never has a buffer; to preallocate one, use `fkalloc()` or `fkcalloc()`.
+Slack isn't sticky: a later `fkstrtrunc()`, `fkremove()`, or trim can
+shrink the buffer again once it crosses the deflate threshold (see
+[Design notes](#design-notes)).
+
+```c
+fkstring *s = fkstrnew("Log:");
+fkslack(s, 4096);        /* one realloc() now... */
+for (i = 0; i < n; i++)
+	fkstrcatf(s, " %d", v[i]); /* ...none here while it fits */
+```
+
+#### `fkstring *fkfit(fkstring *fks);`
+Shrinks the buffer of `fks` to exactly `fkstrlen(fks) + 1` bytes, releasing
+any slack. Unlike the shrinking that `fkstrtrunc()` does, this ignores the
+deflate threshold and the minimum allocation size. Use it once a string is
+done growing and will be kept around. Returns `fks`, or `NULL` if `fks` is
+`NULL`. No-op on an empty `fks`.
+
 #### `size_t fkremove(fkstring *fstr, size_t start, size_t len);`
 Removes up to `len` bytes starting at byte offset `start` from `fstr`, in
 place, shifting the remaining bytes down. Returns the number of bytes

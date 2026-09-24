@@ -12,6 +12,7 @@ SRCS=framework.c \
      test_fkstrdestroy.c \
      test_fkstrdup.c \
      test_fkstrtrunc.c \
+     test_fkslack.c \
      test_fkstrcat.c \
      test_fkstrcatf.c \
      test_fkinsert.c \

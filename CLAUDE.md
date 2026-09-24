@@ -68,7 +68,8 @@ below are easy to miss):
   `pos == len`; it copies `src` aside first when it points into `dst`'s own
   buffer, since growth can move that buffer), replacement (`fkreplace`/
   `fkreplacec`, via the static `fkreplace_internal`, which counts matches
-  first, then builds the result in one fresh buffer), truncation, `fksubstr`, `fkremove`, trimming (`fkltrim`/`fkrtrim`/
+  first, then builds the result in one fresh buffer), truncation, capacity
+  control (`fkslack`/`fkfit`, see convention 1), `fksubstr`, `fkremove`, trimming (`fkltrim`/`fkrtrim`/
   `fktrim`, which funnel through `fkremove`/`fkstrtrunc` rather than
   duplicating the shift/truncate logic), and `fksplit`/`fkjoin`/
   `fkarraydestroy` (the only functions dealing in `fkstring **` arrays —
@@ -110,7 +111,14 @@ Cross-cutting conventions a change should preserve:
    `alloc > _minalloc` (16 bytes). This two-threshold scheme is what keeps
    repeated grow/shrink cycles (e.g. in a loop) from thrashing `realloc()`
    on every call. Both constants live in `fkstring_internal.h`; the logic
-   lives in `fkstring.c`.
+   lives in `fkstring.c`. `fkslack(fks, n)` and `fkfit(fks)` deliberately
+   bypass it: they set `alloc` to exactly `len + n + 1` (grow only) and
+   `len + 1`, ignoring `_bumpfactor`/`_minalloc`. There is no per-string
+   floor, so a later `fkstrtrunc()` (and thus `fkremove()` or a trim) past
+   the `_deflatefactor` threshold undoes an `fkslack()`. The user accepted
+   this rather than adding a struct field. Both are no-ops on empty strings,
+   preserving the `len == 0` invariant; `fkalloc()`/`fkcalloc()` cover
+   preallocating those.
 2. **NUL-terminated, but length-authoritative.** Every non-empty `fkstring`
    keeps `cstr` NUL-terminated at `cstr[len]` for easy interop with libc/
    POSIX calls, but `len` (not the terminator) is authoritative — `fkstrnewb()`
@@ -149,8 +157,8 @@ Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
 function convention, and document it in `README.md`. Items are ordered
 roughly by usefulness (#1 comparison, #2 search, #3 formatted append, #4
-join, #5 insert, #6 replace and #10 line reading are done); the top remaining one is #7,
-capacity control.
+join, #5 insert, #6 replace, #7 capacity control and #10 line reading are
+done); the top remaining one is #8, character-set trims.
 
 **Cross-cutting concerns for every item below:**
 
@@ -162,7 +170,7 @@ capacity control.
   multiply wraps at `SIZE_MAX / 143`, only about 30 MB on 32-bit.
 - *Return-type rule* (settled by `fkstrcatf`). Mutators that append or
   otherwise grow/rewrite `dst` return `dst` for chaining, or `NULL` for
-  invalid arguments (`fkstrcatf`, `fkstrtrunc`, `fkinsert`, `fkreplace`; `fkstrcat`/
+  invalid arguments (`fkstrcatf`, `fkstrtrunc`, `fkinsert`, `fkreplace`, `fkslack`, `fkfit`; `fkstrcat`/
   `fkstrcatc`/`fkstrcatone` return `dst` but don't yet NULL-check it).
   Mutators that only remove bytes return a `size_t` count or length
   (`fkremove`, trims, #8).
@@ -172,14 +180,6 @@ capacity control.
 
 ### Tier 2 — editing primitives
 
-7. **Capacity control: `fkreserve(fks, n)`, `fkshrinktofit(fks)`.**
-   Design tension to resolve first: `fkreserve` on an empty string conflicts
-   with the `len == 0 ⇒ alloc == 0` invariant. Options: relax the invariant
-   (`len == 0 ⇒ cstr == NULL` *or* `cstr[0] == '\0'`), or make reserve a
-   no-op on empty strings (much less useful). Also, a reservation would be
-   undone by the next `fkstrtrunc()` under the 350% `_deflatefactor`
-   threshold — likely needs a per-string "don't shrink below N" field.
-   Discuss with the user before implementing; it touches the struct.
 8. **Character-set trims: `fkltrimset(fks, const char *set)`,
    `fkrtrimset`, `fktrimset`.** Generalize the `\s`-only trims; the existing
    `fkltrim`/`fkrtrim`/`fktrim` can become thin wrappers.

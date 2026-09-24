@@ -35,6 +35,8 @@ fkstring *fkinsert(fkstring *fks, size_t pos, const fkstring *src);
 fkstring *fkinsertc(fkstring *fks, size_t pos, const char *cstr);
 fkstring *fksubstr(const fkstring *fstr, size_t start, size_t len);
 fkstring *fkstrtrunc(fkstring *fks, size_t newlen);
+fkstring *fkslack(fkstring *fks, size_t n);
+fkstring *fkfit(fkstring *fks);
 size_t fkremove(fkstring *fstr, size_t start, size_t len);
 size_t fkltrim(fkstring *fks);
 size_t fkrtrim(fkstring *fks);

@@ -173,6 +173,52 @@ fkstring *fkstrtrunc(fkstring *fks, size_t newlen)
 	return fks;
 }
 
+/*
+ * Empty strings are left alone to keep the len == 0 invariant. Growth is to
+ * exactly len + n + 1, not allocforlen(): the caller already said how much.
+ */
+fkstring *fkslack(fkstring *fks, size_t n)
+{
+	size_t	newalloc;
+	char	*newbuf;
+
+	if (!fks)
+		return NULL;
+
+	if (fks->len == 0)
+		return fks;
+
+	newalloc = fkaddlen(fkaddlen(fks->len, n), 1);
+	if (fks->alloc < newalloc)
+	{
+		newbuf = realloc(fks->cstr, newalloc);
+		if (!newbuf)
+			fkpanic(FKSTRERR_MEMALLOC);
+		fks->cstr = newbuf;
+		fks->alloc = newalloc;
+	}
+	return fks;
+}
+
+/* Unlike fkstrtrunc(), ignores _deflatefactor and _minalloc. */
+fkstring *fkfit(fkstring *fks)
+{
+	char	*newbuf;
+
+	if (!fks)
+		return NULL;
+
+	if (fks->len != 0 && fks->alloc > fks->len + 1)
+	{
+		newbuf = realloc(fks->cstr, fks->len + 1);
+		if (!newbuf)
+			fkpanic(FKSTRERR_MEMALLOC);
+		fks->cstr = newbuf;
+		fks->alloc = fks->len + 1;
+	}
+	return fks;
+}
+
 fkstring *fkstrdup(const fkstring *fks)
 {
 	size_t		newlen, newalloc;

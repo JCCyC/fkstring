@@ -10,6 +10,7 @@ extern test_suite fkalloc_suite;
 extern test_suite fkstrdestroy_suite;
 extern test_suite fkstrdup_suite;
 extern test_suite fkstrtrunc_suite;
+extern test_suite fkslack_suite;
 extern test_suite fkstrcat_suite;
 extern test_suite fkinsert_suite;
 extern test_suite fksubstr_suite;
@@ -39,6 +40,7 @@ int main(void)
 		fkinsert_suite,
 		fksubstr_suite,
 		fkstrtrunc_suite,
+		fkslack_suite,
 		fkremove_suite,
 		fktrim_suite,
 		fksplit_suite,
