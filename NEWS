@@ -1,3 +1,9 @@
+Unreleased
+==========
+
+* New make release target: distcheck plus a .sha256 checksum file for
+  each release archive.
+
 fkstring 0.9.0 (2026-09-24)
 ===========================
 

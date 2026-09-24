@@ -19,6 +19,9 @@ AC_DEFINE_UNQUOTED([FKSTR_HAVE_MEMMEM], [$fk_have_memmem],
                    [Define to 1 if memmem() is available, 0 otherwise.])
 
 AC_PATH_PROG([VALGRIND], [valgrind])
+# For make release. shasum (Perl, on BSD/macOS) prints the same format.
+AC_CHECK_PROGS([SHA256SUM], [sha256sum shasum])
+AS_IF([test "x$SHA256SUM" = xshasum], [SHA256SUM="shasum -a 256"])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

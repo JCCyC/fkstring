@@ -129,4 +129,13 @@ memcheck: tests/alltests$(EXEEXT)
 	$(LIBTOOL) --mode=execute $(VALGRIND) --leak-check=full \
 	  --show-leak-kinds=all --error-exitcode=99 tests/alltests$(EXEEXT)
 
-.PHONY: test memcheck
+# Maintainer target: distcheck, then write a sha256sum-style .sha256 next
+# to each archive for uploading with it (verify with sha256sum -c).
+release: distcheck
+	@if test -z "$(SHA256SUM)"; then \
+	  echo "sha256sum/shasum not found; install one and rerun configure" >&2; \
+	  exit 1; \
+	fi
+	for f in $(DIST_ARCHIVES); do $(SHA256SUM) "$$f" > "$$f.sha256" || exit 1; done
+
+.PHONY: test memcheck release

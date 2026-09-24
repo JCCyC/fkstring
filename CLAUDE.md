@@ -49,12 +49,22 @@ LGPL-2.1 licensed.
   agree: `AC_INIT` in `configure.ac` and the `FKSTRING_VERSION*` macros at
   the top of `fkstring.h` (`fkstrversion()` in `fkstring.c` returns
   `FKSTRING_VERSION`). `tests/test_fkstrversion.c` fails `make check` if
-  they drift. Bumping it means editing both, `autoreconf -fi`, adding a
-  `NEWS` entry, and tagging `vX.Y.Z`. The libtool `-version-info` in
+  they drift. `NEWS` is the changelog (user-facing, per release; there is
+  no `ChangeLog`): after every user-visible change, add a line under its
+  `Unreleased` heading right away, not at release time. Bumping the version
+  means editing both places, `autoreconf -fi`, renaming `Unreleased` to
+  `fkstring X.Y.Z (date)` with a fresh empty `Unreleased` above it, and
+  tagging `vX.Y.Z`. The libtool `-version-info` in
   `Makefile.am` is independent (see the comment there): update it per
   libtool's rules at each release, not per package bump.
 - Release tarball: `make dist`; `make distcheck` also verifies a VPATH
-  build, `make check` and install/uninstall from it.
+  build, `make check` and install/uninstall from it. `make release` (custom
+  rule in `Makefile.am`) runs `distcheck`, then writes a `.sha256` next to
+  each archive in `$(DIST_ARCHIVES)`; `configure` picks `sha256sum` or
+  `shasum -a 256` as `SHA256SUM`. Build releases from a clean checkout of
+  the tag, since `make dist` packs uncommitted edits to distributed files,
+  and upload the tarball and its `.sha256` to a GitHub release (a pushed
+  tag alone only gets `git archive` snapshots, which lack `configure`).
 
 `tests/alltests` is a from-scratch assertion-based suite (no external test
 framework) living in `tests/`: one `test_<fn>.c` file per `fkstring.c`/
