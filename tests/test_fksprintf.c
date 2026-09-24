@@ -1,5 +1,7 @@
 #include <string.h>
 #include <stdarg.h>
+#include <errno.h>
+#include <wchar.h>
 #include <fkstring.h>
 #include <fkstring_internal.h>
 #include "framework.h"
@@ -109,6 +111,20 @@ static int test_fksprintf_null_fmt(char *errbuf, size_t errbuflen)
 	return 1;
 }
 
+static int test_fksprintf_vsnprintf_failure_returns_null(char *errbuf, size_t errbuflen)
+{
+	/* U+0100 has no multibyte form in the C locale: vsnprintf() fails with
+	 * EILSEQ. Under make memcheck this also checks nothing leaks. */
+	static const wchar_t	unconvertible[] = { 0x100, 0 };
+	fkstring		*s;
+
+	errno = 0;
+	s = fksprintf("abc%ls", unconvertible);
+	CHECK(s == NULL, "expected NULL when vsnprintf() fails");
+	CHECK(errno == EILSEQ, "expected errno EILSEQ, got %d", errno);
+	return 1;
+}
+
 static test_case fksprintf_tests[] = {
 	{ "fksprintf() with no format specifiers returns the literal text", test_fksprintf_no_specifiers },
 	{ "fksprintf() with mixed %d/%s specifiers formats correctly", test_fksprintf_mixed_specifiers },
@@ -117,6 +133,7 @@ static test_case fksprintf_tests[] = {
 	{ "fksprintf() returns NULL for a NULL fmt", test_fksprintf_null_fmt },
 	{ "fkvsprintf() works from a user-written variadic wrapper", test_fkvsprintf_via_wrapper },
 	{ "fkvsprintf() grow-and-retry pass still sees every argument", test_fkvsprintf_retry_via_wrapper },
+	{ "fksprintf() returns NULL with errno set when vsnprintf() fails", test_fksprintf_vsnprintf_failure_returns_null },
 };
 
 test_suite fksprintf_suite = { fksprintf_tests, sizeof(fksprintf_tests) / sizeof(fksprintf_tests[0]) };

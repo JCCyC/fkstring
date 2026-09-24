@@ -259,6 +259,21 @@ static int test_fkstrcatc_from_own_buffer_with_growth(char *errbuf, size_t errbu
 	return 1;
 }
 
+/* ---- NULL arguments ---- */
+
+static int test_fkstrcat_null_args(char *errbuf, size_t errbuflen)
+{
+	fkstring	*s = fkstrnew("keep");
+
+	CHECK(fkstrcat(NULL, s) == NULL, "fkstrcat(): expected NULL for a NULL dst");
+	CHECK(fkstrcat(s, NULL) == NULL, "fkstrcat(): expected NULL for a NULL src");
+	CHECK(fkstrcatc(NULL, "x") == NULL, "fkstrcatc(): expected NULL for a NULL dst");
+	CHECK(fkstrcatone(NULL, 'x') == NULL, "fkstrcatone(): expected NULL for a NULL dst");
+	CHECK(fkstrlen(s) == 4 && strcmp(fkcstr(s), "keep") == 0, "NULL src modified dst");
+	fkstrdestroy(s);
+	return 1;
+}
+
 static test_case fkstrcat_tests[] = {
 	{ "fkstrcat() with an empty src leaves dst completely untouched", test_fkstrcat_empty_src_leaves_dst_untouched },
 	{ "fkstrcat() with both dst and src empty stays empty", test_fkstrcat_both_empty },
@@ -277,6 +292,7 @@ static test_case fkstrcat_tests[] = {
 	{ "fkstrcatone() into an empty dst", test_fkstrcatone_into_empty_dst },
 	{ "fkstrcatone() repeated across the growth boundary matches allocforlen() exactly", test_fkstrcatone_growth_boundary },
 	{ "fkstrcatone() can append a literal NUL byte, preserving it within len", test_fkstrcatone_embedded_nul },
+	{ "fkstrcat()/fkstrcatc()/fkstrcatone() return NULL for a NULL dst, fkstrcat() also for a NULL src", test_fkstrcat_null_args },
 };
 
 test_suite fkstrcat_suite = { fkstrcat_tests, sizeof(fkstrcat_tests) / sizeof(fkstrcat_tests[0]) };

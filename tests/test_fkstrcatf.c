@@ -1,5 +1,7 @@
 #include <string.h>
 #include <stdarg.h>
+#include <errno.h>
+#include <wchar.h>
 #include <fkstring.h>
 #include <fkstring_internal.h>
 #include "framework.h"
@@ -172,6 +174,43 @@ static int test_fkstrcatvf_second_pass_sees_all_args(char *errbuf, size_t errbuf
 	return 1;
 }
 
+/* ---- vsnprintf() failure ---- */
+
+/* In the C locale (the test run never calls setlocale()), U+0100 has no
+ * multibyte form, so %ls/%lc make vsnprintf() fail with EILSEQ. */
+static const wchar_t unconvertible[] = { 0x100, 0 };
+
+static int test_fkstrcatf_vsnprintf_failure_leaves_dst_untouched(char *errbuf, size_t errbuflen)
+{
+	fkstring	*s = fkstrnew("keep");
+	char		*cstrbefore = fkcstr(s);
+	size_t		allocbefore = fkstrsize(s);
+
+	errno = 0;
+	CHECK(fkstrcatf(s, "abc%ls", unconvertible) == NULL, "expected NULL when vsnprintf() fails");
+	CHECK(errno == EILSEQ, "expected errno EILSEQ, got %d", errno);
+	CHECK(fkcstr(s) == cstrbefore, "expected cstr pointer unchanged");
+	CHECK(fkstrsize(s) == allocbefore, "expected alloc unchanged, got %zu", fkstrsize(s));
+	CHECK(fkstrlen(s) == 4, "expected len 4, got %zu", fkstrlen(s));
+	CHECK(strcmp(fkcstr(s), "keep") == 0, "expected 'keep' (partial output dropped), got '%s'", fkcstr(s));
+	fkstrdestroy(s);
+	return 1;
+}
+
+static int test_fkstrcatf_vsnprintf_failure_on_empty_dst(char *errbuf, size_t errbuflen)
+{
+	fkstring *s = fkstrnew(NULL);
+
+	errno = 0;
+	CHECK(fkstrcatf(s, "%lc", (wint_t)unconvertible[0]) == NULL, "expected NULL when vsnprintf() fails");
+	CHECK(errno == EILSEQ, "expected errno EILSEQ, got %d", errno);
+	CHECK(fkstrlen(s) == 0, "expected len 0, got %zu", fkstrlen(s));
+	CHECK(fkstrsize(s) == 0, "expected alloc 0 (len==0 invariant), got %zu", fkstrsize(s));
+	CHECK(fkcstr(s) == NULL, "expected cstr NULL (len==0 invariant)");
+	fkstrdestroy(s);
+	return 1;
+}
+
 static test_case fkstrcatf_tests[] = {
 	{ "fkstrcatf() within existing slack formats in place without realloc", test_fkstrcatf_within_slack_no_realloc },
 	{ "fkstrcatf() grows only when the output plus NUL exceeds the slack", test_fkstrcatf_exactly_fills_slack_grows },
@@ -184,6 +223,8 @@ static test_case fkstrcatf_tests[] = {
 	{ "fkstrcatf() returns NULL for a NULL dst or fmt", test_fkstrcatf_null_args },
 	{ "fkstrcatvf() works from a user-written variadic wrapper", test_fkstrcatvf_via_wrapper },
 	{ "fkstrcatvf() second (grow) pass still sees every argument", test_fkstrcatvf_second_pass_sees_all_args },
+	{ "fkstrcatf() returns NULL with errno set and dst untouched when vsnprintf() fails", test_fkstrcatf_vsnprintf_failure_leaves_dst_untouched },
+	{ "fkstrcatf() vsnprintf() failure on an empty dst honors the len==0 invariant", test_fkstrcatf_vsnprintf_failure_on_empty_dst },
 };
 
 test_suite fkstrcatf_suite = { fkstrcatf_tests, sizeof(fkstrcatf_tests) / sizeof(fkstrcatf_tests[0]) };

@@ -175,7 +175,13 @@ Cross-cutting conventions a change should preserve:
    `allocforlen()` and the second pass consumes the caller's `ap`. This
    handles both glibc >= 2.1 (returns the required size) and the older
    glibc 2.0 behavior (returns -1, handled by a 10x size guess) — see the
-   `TODO` comment for the known limitation on very old glibc.
+   `TODO` comment for the known limitation on very old glibc. A real
+   `vsnprintf()` failure (`EOVERFLOW` past `INT_MAX`, `EILSEQ` for `%ls`/
+   `%lc`) returns `NULL` with `errno` set and `dst`'s contents intact (the
+   static `fkstrcatvf_fail`). Since glibc 2.0 also returned -1 on mere
+   truncation, a first-pass -1 is only treated as an error when `errno` is
+   nonzero (it's cleared first). `FKSTRERR_VSNPRINTF` now panics only if
+   the second pass overflows the size the first one reported.
 5. **`size_t`/`ssize_t` convention.** `fkstring.len`/`.alloc` and all
    length/offset parameters are `size_t`. Only functions mirroring
    `read()`/`write()` semantics (`fkstrwrite`) return `ssize_t`; everything
@@ -206,8 +212,8 @@ join, #5 insert, #6 replace, #7 capacity control, #10 line reading and
   multiply wraps at `SIZE_MAX / 143`, only about 30 MB on 32-bit.
 - *Return-type rule* (settled by `fkstrcatf`). Mutators that append or
   otherwise grow/rewrite `dst` return `dst` for chaining, or `NULL` for
-  invalid arguments (`fkstrcatf`, `fkstrtrunc`, `fkinsert`, `fkreplace`, `fkslack`, `fkfit`; `fkstrcat`/
-  `fkstrcatc`/`fkstrcatone` return `dst` but don't yet NULL-check it).
+  invalid arguments (`fkstrcat`/`fkstrcatc`/`fkstrcatone`, `fkstrcatf`,
+  `fkstrtrunc`, `fkinsert`, `fkreplace`, `fkslack`, `fkfit`).
   Mutators that only remove bytes return a `size_t` count or length
   (`fkremove`, trims, #8).
 - *NUL safety.* Everything must honor `len` and tolerate `cstr == NULL` for

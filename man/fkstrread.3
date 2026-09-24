@@ -42,7 +42,13 @@ set by
 See
 .BR read (2).
 .BR fkstrread ()
-does not return on allocation failure; see
+does not return on allocation failure, or when
+.I count
+is
+.BR SIZE_MAX ,
+so that
+.IR count "\~+\~1"
+overflows; see
 .BR fkstring (3).
 .SH NOTES
 Like

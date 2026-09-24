@@ -135,13 +135,16 @@ by `fksplit()`), then the array itself. Safe to call with `NULL`.
 ### Modifying in place
 
 #### `fkstring *fkstrcat(fkstring *dst, const fkstring *src);`
-Appends `src` to `dst` in place. Returns `dst`.
+Appends `src` to `dst` in place. Returns `dst`, or `NULL` if either argument
+is `NULL`.
 
 #### `fkstring *fkstrcatc(fkstring *dst, const char *src);`
-Appends a null-terminated C string `src` to `dst` in place. Returns `dst`.
+Appends a null-terminated C string `src` to `dst` in place. A `NULL` or empty
+`src` is a no-op. Returns `dst`, or `NULL` if `dst` is `NULL`.
 
 #### `fkstring *fkstrcatone(fkstring *dst, char c);`
-Appends a single character `c` to `dst` in place. Returns `dst`.
+Appends a single character `c` to `dst` in place. Returns `dst`, or `NULL` if
+`dst` is `NULL`.
 
 The `src` of any of the `fkstrcat` functions may be `dst` itself, or point
 into `dst`'s buffer: `fkstrcat(s, s)` doubles `s`.
@@ -184,7 +187,10 @@ Append `printf()`-formatted output to `dst` in place, writing directly into
 spare capacity, nothing is reallocated. Otherwise `dst` grows once, by the
 usual bump factor, and the output is formatted again. Returns `dst` for
 chaining, or `NULL` if `dst` or `fmt` is `NULL`. `%c` with a zero argument
-appends an embedded NUL, and `len` counts it.
+appends an embedded NUL, and `len` counts it. If `vsnprintf()` itself fails
+(output past `INT_MAX` bytes, or a `%ls`/`%lc` argument the current locale
+can't convert), they return `NULL` with `errno` set (`EOVERFLOW`/`EILSEQ`)
+and `dst` unchanged.
 
 `fkstrcatvf()` takes a `va_list` so you can write your own variadic
 wrappers. As with `vprintf()`, `ap` is indeterminate afterwards: call
@@ -290,7 +296,7 @@ fkstrdestroy(csv);
 #### `fkstring *fkvsprintf(const char *fmt, va_list ap);`
 Create a new `fkstring` formatted using `printf()` semantics. They are
 equivalent to `fkstrcatf()`/`fkstrcatvf()` on a new empty string, and return
-`NULL` if `fmt` is `NULL`.
+`NULL` if `fmt` is `NULL`, or with `errno` set if `vsnprintf()` fails.
 
 ### Comparison
 
@@ -379,7 +385,8 @@ the underlying `write()` call.
 #### `fkstring *fkstrread(int fd, size_t count);`
 Creates a new `fkstring` by reading up to `count` bytes from file
 descriptor `fd`. Returns `NULL` on a read error (negative return from
-`read()`); returns an empty `fkstring` at end of file.
+`read()`); returns an empty `fkstring` at end of file. `count == SIZE_MAX` is
+a fatal length overflow, like out-of-memory.
 
 #### `fkstring *fkreadline(FILE *fp);`
 Reads one line of any length from `fp` and returns it as a new `fkstring`.

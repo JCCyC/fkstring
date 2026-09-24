@@ -71,7 +71,7 @@ return a new
 .BR fkstring ,
 or NULL if
 .I fmt
-is NULL.
+is NULL or formatting fails.
 .PP
 .BR fkstrcatf ()
 and
@@ -84,28 +84,37 @@ unchanged, if
 .I dst
 or
 .I fmt
-is NULL.
+is NULL or formatting fails.
+.PP
+When formatting fails,
+.I errno
+is set as described below, and
+.I dst
+keeps its contents; any partial output is discarded.
 .SH ERRORS
-These functions do not return on allocation failure; see
-.BR fkstring (3).
-.SH BUGS
-If
-.BR vsnprintf (3)
-itself fails, these functions terminate the process with the message
-.RB \(dq "Inconsistency in vsnprintf() behavior" \(dq
-instead of returning an error.
-This happens when the output would exceed
+.TP
+.B EOVERFLOW
+The output of this call would exceed
 .B INT_MAX
-bytes, or when a
+bytes.
+.TP
+.B EILSEQ
+A
 .B %ls
 or
 .B %lc
-argument cannot be converted in the current locale.
+argument cannot be converted to a multibyte string in the current locale.
 .PP
+.BR vsnprintf (3)
+may report other errors on some systems; they are passed on the same way.
+These functions do not return on allocation failure; see
+.BR fkstring (3).
+.SH BUGS
 With glibc versions before 2.1, whose
 .BR vsnprintf (3)
 does not report the length needed, output more than ten times longer
-than the first guess fails in the same way.
+than the first guess fails with
+.BR EOVERFLOW .
 .SH EXAMPLES
 .EX
 static void

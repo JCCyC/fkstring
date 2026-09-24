@@ -295,8 +295,9 @@ A resulting length would not fit in a
 .TP
 .B Inconsistency in vsnprintf() behavior
 .BR vsnprintf (3)
-failed while formatting; see
+reported a length on the first pass that did not fit on the second; see
 .BR fksprintf (3).
+Formatting errors themselves are returned to the caller instead.
 .SH ATTRIBUTES
 Functions operating on distinct
 .B fkstring

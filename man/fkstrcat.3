@@ -52,22 +52,19 @@ buffer:
 doubles
 .IR s .
 .SH RETURN VALUE
-.IR dst .
+.IR dst ,
+or NULL, leaving
+.I dst
+unchanged, if
+.I dst
+is NULL, or if the
+.I src
+of
+.BR fkstrcat ()
+is.
 .SH ERRORS
 These functions do not return on allocation failure; see
 .BR fkstring (3).
-.SH BUGS
-Unlike the other functions in the library, these do not check their
-arguments:
-.I dst
-must not be NULL, and neither may the
-.I src
-of
-.BR fkstrcat ().
-.BR fkinsert (3)
-at offset
-.BR fkstrlen ( dst )
-is an equivalent that does check.
 .SH EXAMPLES
 .EX
 fkstring *s = fkstrnew("foo");

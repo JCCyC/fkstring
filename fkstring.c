@@ -301,11 +301,15 @@ static fkstring *fkinsert_internal(fkstring *dst, size_t pos, const char *src, s
 
 fkstring *fkstrcat(fkstring *dst, const fkstring *src)
 {
+	if (!dst || !src)
+		return NULL;
 	return fkinsert_internal(dst, dst->len, src->cstr, src->len);
 }
 
 fkstring *fkstrcatc(fkstring *dst, const char *src)
 {
+	if (!dst)
+		return NULL;
 	if (src && src[0])
 		return fkinsert_internal(dst, dst->len, src, strlen(src));
 	else
@@ -314,6 +318,8 @@ fkstring *fkstrcatc(fkstring *dst, const char *src)
 
 fkstring *fkstrcatone(fkstring *dst, char c)
 {
+	if (!dst)
+		return NULL;
 	return fkinsert_internal(dst, dst->len, &c, 1);
 }
 

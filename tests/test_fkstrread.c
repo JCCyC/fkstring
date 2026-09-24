@@ -1,6 +1,9 @@
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <sys/wait.h>
 #include <fkstring.h>
+#include <fkstring_internal.h>
 #include "framework.h"
 
 static int test_fkstrread_partial(char *errbuf, size_t errbuflen)
@@ -96,12 +99,46 @@ static int test_fkstrread_bad_fd_returns_null(char *errbuf, size_t errbuflen)
 	return 1;
 }
 
+static int test_fkstrread_count_overflow_panics(char *errbuf, size_t errbuflen)
+{
+	/* count + 1 would wrap to 0; fkpanic() exits, so run it in a child
+	 * (see test_fkpanic.c). */
+	int	pipefd[2];
+	pid_t	pid;
+	int	status;
+	char	captured[256];
+	ssize_t	n;
+
+	CHECK(pipe(pipefd) == 0, "pipe() failed");
+	pid = fork();
+	CHECK(pid >= 0, "fork() failed");
+	if (pid == 0)
+	{
+		close(pipefd[0]);
+		dup2(pipefd[1], 2);
+		close(pipefd[1]);
+		fkstrread(0, SIZE_MAX);
+		_exit(0);
+	}
+	close(pipefd[1]);
+	n = read(pipefd[0], captured, sizeof(captured) - 1);
+	captured[n < 0 ? 0 : n] = '\0';
+	close(pipefd[0]);
+	CHECK(waitpid(pid, &status, 0) == pid, "waitpid() failed");
+	CHECK(WIFEXITED(status) && WEXITSTATUS(status) == 253,
+		"expected exit code 253, got status 0x%x", status);
+	CHECK(strcmp(captured, errmsgs[FKSTRERR_OVERFLOW]) == 0,
+		"expected stderr '%s', got '%s'", errmsgs[FKSTRERR_OVERFLOW], captured);
+	return 1;
+}
+
 static test_case fkstrread_tests[] = {
 	{ "fkstrread() of a partial read sets len/alloc correctly", test_fkstrread_partial },
 	{ "fkstrread() requesting exactly the available bytes reads them all", test_fkstrread_exact },
 	{ "fkstrread() at EOF honors the len==0 invariant", test_fkstrread_eof_honors_len_zero_invariant },
 	{ "fkstrread() with count==0 honors the len==0 invariant", test_fkstrread_zero_count_honors_len_zero_invariant },
 	{ "fkstrread() on a closed fd returns NULL", test_fkstrread_bad_fd_returns_null },
+	{ "fkstrread() with count == SIZE_MAX panics with FKSTRERR_OVERFLOW", test_fkstrread_count_overflow_panics },
 };
 
 test_suite fkstrread_suite = { fkstrread_tests, sizeof(fkstrread_tests) / sizeof(fkstrread_tests[0]) };
