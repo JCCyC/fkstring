@@ -9,6 +9,10 @@ reallocations on every append — while staying close to the metal: a `cstr`
 field gives you a plain, null-terminated `char *` whenever you need to hand
 the contents to a libc or POSIX function.
 
+_This project was conceived and designed by a human. After a sizable portion
+of its functionality had been coded, the aforementioned human started using
+Claude Code to accelerate development._
+
 ## Design notes
 
 - Every `fkstring` tracks its length (`len`) and allocated capacity (`alloc`)
