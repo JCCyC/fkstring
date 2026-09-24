@@ -51,8 +51,9 @@ sudo make install
 ```
 
 This builds and installs `libfkstring.a` (static) and `libfkstring.so`
-(shared, via libtool) under `$prefix/lib`, and the headers (`fkstring.h`,
-`fkstring_internal.h`) under `$prefix/include`. `prefix` defaults to
+(shared, via libtool) under `$prefix/lib`, the headers (`fkstring.h`,
+`fkstring_internal.h`) under `$prefix/include`, and the manual pages under
+`$prefix/share/man/man3`. `prefix` defaults to
 `/usr/local`; pass `--prefix=DIR` to `configure` to install elsewhere, and
 the usual `--disable-shared`/`--disable-static` to build only one flavor.
 Out-of-tree builds (running `configure` from another directory) work too.
@@ -91,6 +92,11 @@ Accessor macros:
 | `fkcstr(fks)`       | The underlying `char *` buffer.               |
 
 ## Function reference
+
+Every function also has a manual page in section 3: start with
+`man fkstring` for an overview, or `man fkstrcat` etc. for a specific
+function. Related functions share a page. To read the pages without
+installing, run `man -l man/fkstrcat.3`.
 
 ### Creation and destruction
 
@@ -462,7 +468,9 @@ function. Run it with:
 make check
 ```
 
-The suite's per-test output goes to `tests/alltests.log`; run
+This also runs `tests/manpages.sh`, which checks that every public function
+has a manual page and, if groff is installed, that the pages have no
+formatting warnings. The suite's per-test output goes to `tests/alltests.log`; run
 `./tests/alltests` directly to watch it live.
 
 To also check for memory leaks and errors under Valgrind (which must be

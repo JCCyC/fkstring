@@ -1,0 +1,57 @@
+.TH FKSTARTSWITH 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstartswith, fkstartswithc, fkendswith, fkendswithc \- test an fkstring for a prefix or suffix
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "int fkstartswith(const fkstring *" fks ", const fkstring *" prefix );
+.BI "int fkstartswithc(const fkstring *" fks ", const char *" prefix );
+.PP
+.BI "int fkendswith(const fkstring *" fks ", const fkstring *" suffix );
+.BI "int fkendswithc(const fkstring *" fks ", const char *" suffix );
+.fi
+.SH DESCRIPTION
+.BR fkstartswith ()
+tests whether
+.I fks
+begins with
+.IR prefix ,
+and
+.BR fkendswith ()
+whether it ends with
+.IR suffix .
+The empty string is a prefix and a suffix of every
+.BR fkstring .
+.PP
+.BR fkstartswithc ()
+and
+.BR fkendswithc ()
+take a NUL-terminated
+.I prefix
+or
+.IR suffix .
+.I fks
+itself is still measured by its length, so a suffix is matched against
+its true end, past any embedded NUL bytes.
+.SH RETURN VALUE
+1 if
+.I fks
+begins (or ends) with the given string, and 0 if it does not or
+either argument is NULL.
+.SH EXAMPLES
+.EX
+fkstring *f = fkstrnew("file.tar.gz");
+\&
+fkendswithc(f, ".tar.gz");    /* 1 */
+fkstartswithc(f, "file.");    /* 1 */
+fkstartswithc(f, "");         /* 1 */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkstrcmp (3),
+.BR fkstrfind (3)

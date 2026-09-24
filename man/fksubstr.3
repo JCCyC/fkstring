@@ -1,0 +1,66 @@
+.TH FKSUBSTR 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fksubstr \- extract part of an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fksubstr(const fkstring *" fstr ", size_t " start ", size_t " len );
+.fi
+.SH DESCRIPTION
+.BR fksubstr ()
+creates an
+.B fkstring
+holding a copy of up to
+.I len
+bytes of
+.I fstr
+starting at byte offset
+.IR start .
+If fewer than
+.I len
+bytes follow
+.IR start ,
+it copies through the end of
+.IR fstr .
+Pass
+.B SIZE_MAX
+as
+.I len
+to copy everything from
+.I start
+on.
+.I fstr
+is not modified.
+.SH RETURN VALUE
+A new
+.BR fkstring .
+It is empty if
+.I len
+is 0 or
+.I start
+is not less than
+.BR fkstrlen ( fstr ).
+.BR fksubstr ()
+returns NULL if
+.I fstr
+is NULL.
+.SH ERRORS
+.BR fksubstr ()
+does not return on allocation failure; see
+.BR fkstring (3).
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("file.tar.gz");
+fkstring *ext = fksubstr(s, fkstrchr(s, \(aq.\(aq, 0) + 1, SIZE_MAX);
+                                        /* "tar.gz" */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkremove (3),
+.BR fksplit (3),
+.BR fkstrfind (3)

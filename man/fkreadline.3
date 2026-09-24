@@ -1,0 +1,86 @@
+.TH FKREADLINE 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkreadline \- read a line from a stream into a new fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkreadline(FILE *" fp );
+.fi
+.SH DESCRIPTION
+.BR fkreadline ()
+reads one line of any length from the stream
+.I fp
+and returns it as a new
+.BR fkstring .
+.PP
+The line's terminating newline is kept, so the only line returned without
+one is a final line that does not end in a newline.
+Embedded NUL bytes are preserved.
+.PP
+The stream is locked once for the whole line with
+.BR flockfile (3),
+and each byte is read with
+.BR getc_unlocked (3).
+.SH RETURN VALUE
+A new
+.BR fkstring ,
+never empty.
+.PP
+.BR fkreadline ()
+returns NULL if
+.I fp
+is NULL, or if end of file or a read error occurs before any byte is
+read.
+If an error occurs partway through a line, the bytes read so far are
+returned; use
+.BR ferror (3)
+to tell this apart from a final line without a newline.
+.SH ERRORS
+On a read error, the error indicator of
+.I fp
+is set and
+.I errno
+is set by the underlying read.
+.BR fkreadline ()
+does not return on allocation failure; see
+.BR fkstring (3).
+.SH NOTES
+Unlike
+.BR fkstrread (3),
+which returns an empty
+.B fkstring
+at end of file,
+.BR fkreadline ()
+returns NULL, so that it can drive a
+.B while
+loop directly.
+.PP
+Unlike
+.BR getline (3),
+.BR fkreadline ()
+needs no buffer from the caller: each line is a new
+.B fkstring
+that the caller frees with
+.BR fkstrdestroy (3).
+.SH EXAMPLES
+.EX
+fkstring *line;
+\&
+while ((line = fkreadline(fp)) != NULL) {
+    fkrtrim(line);   /* drop the newline and trailing blanks */
+    process(line);
+    fkstrdestroy(line);
+}
+if (ferror(fp))
+    perror("read");
+.EE
+.SH SEE ALSO
+.BR getline (3),
+.BR fkstring (3),
+.BR fkstrread (3),
+.BR fkslurp (3)

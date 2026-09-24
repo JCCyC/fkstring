@@ -1,0 +1,352 @@
+.TH FKSTRING 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstring, fkstrlen, fkstrsize, fkcstr, FKSTR_NPOS \- length-tracked, growable C strings
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.B typedef struct _fkstring {
+.BR "    size_t  len;" "      /* bytes of content, excluding the trailing NUL */"
+.BR "    size_t  alloc;" "    /* allocated size of cstr, in bytes */"
+.BR "    char   *cstr;" "     /* NUL-terminated buffer; NULL when len == 0 */"
+.B } fkstring;
+.PP
+.BI "size_t fkstrlen(const fkstring *" fks );
+.BI "size_t fkstrsize(const fkstring *" fks );
+.BI "char *fkcstr(const fkstring *" fks );
+.PP
+.B #define FKSTR_NPOS ((size_t)\-1)
+.fi
+.SH DESCRIPTION
+An
+.B fkstring
+is a heap-allocated string that records its own length
+.RI ( len )
+and buffer size
+.RI ( alloc ),
+so that operations never need to scan for a terminating NUL byte
+and appends do not reallocate on every call.
+.PP
+.BR fkstrlen (),
+.BR fkstrsize (),
+and
+.BR fkcstr ()
+are macros that yield the
+.IR len ,
+.IR alloc ,
+and
+.I cstr
+fields of
+.IR fks .
+They evaluate
+.I fks
+once and do not check it for NULL.
+.PP
+.B FKSTR_NPOS
+is the offset returned by the search functions when there is no match.
+.SS Invariants
+Every
+.B fkstring
+created or modified by the library satisfies the following:
+.IP \(bu 3
+If
+.I len
+is 0, then
+.I alloc
+is 0 and
+.I cstr
+is NULL.
+An empty
+.B fkstring
+owns no buffer.
+Code that passes
+.I cstr
+to a libc function must allow for this, for example with
+.IR "fkstrlen(s) ? fkcstr(s) : \(dq\(dq" .
+.IP \(bu
+Otherwise
+.I len
+is less than
+.IR alloc ,
+and
+.IR cstr [ len ]
+is a NUL byte, so
+.I cstr
+can be passed to functions expecting a C string.
+.IP \(bu
+.I len
+is authoritative, not the NUL terminator.
+A string may contain embedded NUL bytes (see
+.BR fkstrnewb (3)),
+and all library functions honor them.
+A C-string function applied to
+.I cstr
+stops at the first embedded NUL.
+.PP
+Programs may read the fields directly, and may modify the bytes in
+.IR cstr [0]
+through
+.IR cstr [ len "\-1]."
+Changing the fields themselves, or freeing
+.IR cstr ,
+is undefined behavior.
+Every
+.B fkstring
+must eventually be released with
+.BR fkstrdestroy (3).
+.SS Memory growth
+Buffers are sized with hysteresis.
+Growth allocates 143% of the needed length (at least 16 bytes),
+so a run of appends reallocates only a logarithmic number of times.
+Shrinking (by
+.BR fkstrtrunc (3)
+and the functions built on it) returns memory only once the buffer
+exceeds 350% of the new length and is larger than 16 bytes,
+so strings that repeatedly grow and shrink do not reallocate on each call.
+.BR fkslack (3)
+and
+.BR fkfit (3)
+set the buffer size explicitly, bypassing these thresholds.
+.PP
+These parameters are global variables, declared in
+.IR <fkstring_internal.h> :
+.TP
+.BR "int _bumpfactor" " (default 143)"
+Growth factor, in percent.
+.TQ
+.BR "int _deflatefactor" " (default 350)"
+Shrink threshold, in percent of the new length.
+.TQ
+.BR "size_t _minalloc" " (default 16)"
+Minimum buffer size.
+.TQ
+.BR "size_t _sprintftry" " (default 48)"
+First-guess buffer size for formatting into an empty string; see
+.BR fksprintf (3).
+.TQ
+.BR "size_t _slurptry" " (default 4096)"
+Initial buffer size when
+.BR fkslurp (3)
+reads a descriptor with no size hint.
+.TQ
+.BR "size_t _catbufsize" " (default 65536)"
+Copy buffer size for
+.BR fkcat (3).
+.PP
+Assigning to them affects every
+.B fkstring
+in the process.
+.I _bumpfactor
+must be at least 100, and
+.IR _sprintftry ,
+.IR _slurptry ,
+and
+.I _catbufsize
+must be nonzero.
+.SS Error handling
+Functions that return a pointer return NULL only for invalid arguments,
+such as a NULL
+.BR "fkstring *" ,
+and for I/O errors where noted.
+Memory allocation never fails from the caller's point of view: when
+.BR malloc (3)
+or
+.BR realloc (3)
+fails, the library prints a message to standard error and terminates the
+process (see
+.BR DIAGNOSTICS ).
+A length computation that would overflow
+.B size_t
+is handled the same way.
+.SS Functions
+.TP
+.BR fkstrnew (3)
+.BR fkstrnew (),
+.BR fkstrnewb (),
+.BR fkstrdup (),
+.BR fkstrdestroy ()
+\(em create, copy, and destroy.
+.TQ
+.BR fkalloc (3)
+.BR fkalloc (),
+.BR fkcalloc ()
+\(em create with an uninitialized or zeroed length.
+.TQ
+.BR fkstrcat (3)
+.BR fkstrcat (),
+.BR fkstrcatc (),
+.BR fkstrcatone ()
+\(em append.
+.TQ
+.BR fksprintf (3)
+.BR fksprintf (),
+.BR fkvsprintf (),
+.BR fkstrcatf (),
+.BR fkstrcatvf ()
+\(em formatted output.
+.TQ
+.BR fkinsert (3)
+.BR fkinsert (),
+.BR fkinsertc ()
+\(em insert.
+.TQ
+.BR fkreplace (3)
+.BR fkreplace (),
+.BR fkreplacec ()
+\(em replace substrings.
+.TQ
+.BR fkstrtrunc (3)
+.BR fkstrtrunc ()
+\(em truncate.
+.TQ
+.BR fkremove (3)
+.BR fkremove ()
+\(em delete a range of bytes.
+.TQ
+.BR fktrim (3)
+.BR fkltrim (),
+.BR fkrtrim (),
+.BR fktrim ()
+\(em strip whitespace.
+.TQ
+.BR fkslack (3)
+.BR fkslack (),
+.BR fkfit ()
+\(em control the buffer size.
+.TQ
+.BR fksubstr (3)
+.BR fksubstr ()
+\(em extract a substring.
+.TQ
+.BR fksplit (3)
+.BR fksplit (),
+.BR fkarraydestroy ()
+\(em split on a delimiter.
+.TQ
+.BR fkjoin (3)
+.BR fkjoin ()
+\(em join with a separator.
+.TQ
+.BR fkstrcmp (3)
+.BR fkstrcmp (),
+.BR fkstrcasecmp (),
+.BR fkstreq ()
+\(em compare.
+.TQ
+.BR fkstrfind (3)
+.BR fkstrfind (),
+.BR fkstrfindc ()
+\(em find a substring.
+.TQ
+.BR fkstrchr (3)
+.BR fkstrchr (),
+.BR fkstrrchr ()
+\(em find a byte.
+.TQ
+.BR fkstartswith (3)
+.BR fkstartswith (),
+.BR fkstartswithc (),
+.BR fkendswith (),
+.BR fkendswithc ()
+\(em test for a prefix or suffix.
+.TQ
+.BR fkstrwrite (3)
+.BR fkstrwrite ()
+\(em write to a file descriptor.
+.TQ
+.BR fkstrread (3)
+.BR fkstrread ()
+\(em read from a file descriptor.
+.TQ
+.BR fkreadline (3)
+.BR fkreadline ()
+\(em read a line from a stream.
+.TQ
+.BR fkslurp (3)
+.BR fkslurp (),
+.BR fkslurpfile ()
+\(em read a whole file.
+.TQ
+.BR fkcat (3)
+.BR fkcatfd (),
+.BR fkcatf (),
+.BR fkcat ()
+\(em copy a file to a descriptor or stream.
+.SH DIAGNOSTICS
+On an unrecoverable error the library writes one of the following
+messages to standard error and calls
+.BR exit (3)
+with status 253:
+.TP
+.B Memory alloc error
+.BR malloc (3),
+.BR calloc (3),
+or
+.BR realloc (3)
+failed.
+.TP
+.B Length arithmetic overflow
+A resulting length would not fit in a
+.BR size_t .
+.TP
+.B Inconsistency in vsnprintf() behavior
+.BR vsnprintf (3)
+failed while formatting; see
+.BR fksprintf (3).
+.SH ATTRIBUTES
+Functions operating on distinct
+.B fkstring
+objects may be called concurrently from different threads.
+Concurrent access to the same
+.BR fkstring ,
+where at least one access modifies it, needs external locking.
+The tuning variables are not protected; change them, if at all,
+before starting other threads.
+.SH NOTES
+.I <fkstring_internal.h>
+is installed alongside
+.I <fkstring.h>
+for the tuning variables above.
+Its other contents (the error codes and the inline helpers
+.BR fkpanic (),
+.BR fkaddlen (),
+.BR fkmullen (),
+and
+.BR allocforlen ())
+are internal to the library and may change.
+.SH EXAMPLES
+.EX
+#include <stdio.h>
+#include <fkstring.h>
+\&
+int
+main(void)
+{
+    fkstring  *s, **words;
+\&
+    s = fkstrnew("  hello, world  ");
+    fktrim(s);
+    fkstrcatf(s, " (%zu bytes)", fkstrlen(s));
+    puts(fkcstr(s));             /* hello, world (12 bytes) */
+\&
+    words = fksplit(s, \(aq \(aq);
+    printf("%s\en", fkcstr(words[1]));   /* world */
+\&
+    fkarraydestroy(words);
+    fkstrdestroy(s);
+    return 0;
+}
+.EE
+.SH SEE ALSO
+.BR string (3),
+.BR fkstrnew (3)
+.PP
+Joel Spolsky,
+.UR https://www.joelonsoftware.com/2001/12/11/back-to-basics/
+"Back to Basics"
+.UE ,
+the article that inspired this library.

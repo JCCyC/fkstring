@@ -1,0 +1,59 @@
+.TH FKSTRCHR 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrchr, fkstrrchr \- find a byte in an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "size_t fkstrchr(const fkstring *" fks ", char " c ", size_t " start );
+.BI "size_t fkstrrchr(const fkstring *" fks ", char " c );
+.fi
+.SH DESCRIPTION
+.BR fkstrchr ()
+finds the first byte of
+.I fks
+equal to
+.I c
+at or after byte offset
+.IR start .
+.BR fkstrrchr ()
+finds the last byte of
+.I fks
+equal to
+.IR c .
+.PP
+Both search all
+.BR fkstrlen ( fks )
+bytes, so
+.I c
+may be
+.B \(aq\e0\(aq
+to find an embedded NUL byte.
+The terminating NUL at
+.IR cstr [ len ]
+is never matched.
+.SH RETURN VALUE
+The byte offset of the match, or
+.B FKSTR_NPOS
+if there is none, if
+.I fks
+is NULL, or, for
+.BR fkstrchr (),
+if
+.I start
+is not less than
+.BR fkstrlen ( fks ).
+.SH EXAMPLES
+.EX
+fkstring *path = fkstrnew("/usr/local/lib");
+size_t    slash = fkstrrchr(path, \(aq/\(aq);            /* 10 */
+fkstring *base = fksubstr(path, slash + 1, SIZE_MAX);   /* "lib" */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkstrfind (3),
+.BR memchr (3)

@@ -1,0 +1,59 @@
+.TH FKTRIM 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkltrim, fkrtrim, fktrim \- strip whitespace from the ends of an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "size_t fkltrim(fkstring *" fks );
+.BI "size_t fkrtrim(fkstring *" fks );
+.BI "size_t fktrim(fkstring *" fks );
+.fi
+.SH DESCRIPTION
+.BR fkltrim ()
+removes whitespace from the start of
+.IR fks ,
+.BR fkrtrim ()
+from its end, and
+.BR fktrim ()
+from both ends, in place.
+.PP
+Whitespace means the six bytes of the regular-expression
+.B \es
+class: space,
+.BR \(aq\et\(aq ,
+.BR \(aq\en\(aq ,
+.BR \(aq\er\(aq ,
+.BR \(aq\ef\(aq ,
+and
+.BR \(aq\ev\(aq .
+Unlike
+.BR isspace (3),
+this does not depend on the locale.
+.PP
+The buffer is then shrunk by the same rule as
+.BR fkstrtrunc (3).
+A string that is all whitespace becomes empty.
+.SH RETURN VALUE
+The new length of
+.IR fks ,
+or 0 if
+.I fks
+is NULL.
+.SH ERRORS
+These functions do not return on allocation failure; see
+.BR fkstring (3).
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("\et hello world \en");
+\&
+fktrim(s);    /* returns 11; s is "hello world" */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkremove (3),
+.BR fkstrtrunc (3)

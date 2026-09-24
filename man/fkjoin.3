@@ -1,0 +1,75 @@
+.TH FKJOIN 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkjoin \- concatenate an array of fkstrings with a separator
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkjoin(fkstring **" arr ", const char *" sep );
+.fi
+.SH DESCRIPTION
+.BR fkjoin ()
+concatenates the elements of the NULL-terminated array
+.I arr
+into a new
+.BR fkstring ,
+placing the NUL-terminated string
+.I sep
+between each pair of consecutive elements (not before the first or after
+the last).
+A NULL
+.I sep
+is treated as an empty string.
+.PP
+Empty elements still get their separators, so
+.BR fkjoin ()
+is the inverse of
+.BR fksplit (3):
+joining the parts of
+.I s
+split on
+.I c
+with a
+.I sep
+of just
+.I c
+reproduces
+.IR s .
+Embedded NUL bytes in the elements are preserved.
+.PP
+The total length is computed first, so the result is allocated once.
+.I arr
+and its elements are not modified.
+.SH RETURN VALUE
+A new
+.BR fkstring ,
+which is empty if
+.I arr
+has no elements.
+.BR fkjoin ()
+returns NULL if
+.I arr
+is NULL.
+.SH ERRORS
+.BR fkjoin ()
+does not return on allocation failure, nor when the total length
+overflows
+.BR size_t ;
+see
+.BR fkstring (3).
+.SH EXAMPLES
+.EX
+fkstring **parts = fksplit(s, \(aq,\(aq);
+fkstring *csv = fkjoin(parts, ", ");   /* "a,b,c" \-> "a, b, c" */
+\&
+fkarraydestroy(parts);
+fkstrdestroy(csv);
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fksplit (3),
+.BR fkstrcat (3)

@@ -1,0 +1,80 @@
+.TH FKSLACK 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkslack, fkfit \- control the buffer size of an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkslack(fkstring *" fks ", size_t " n );
+.BI "fkstring *fkfit(fkstring *" fks );
+.fi
+.SH DESCRIPTION
+.BR fkslack ()
+ensures that
+.I fks
+has room for at least
+.I n
+more bytes, so that appending or inserting up to
+.I n
+bytes will not reallocate.
+If the buffer is smaller than
+.BR fkstrlen ( fks )\~+\~ \fIn\fP\~+\~1
+bytes, it grows to exactly that size; otherwise it is left alone.
+.PP
+.BR fkfit ()
+shrinks the buffer of
+.I fks
+to exactly
+.BR fkstrlen ( fks )\~+\~1
+bytes, releasing any slack.
+Use it on a string that has finished growing and will be kept for a while.
+.PP
+Both functions set the buffer size directly, bypassing the growth factor,
+shrink threshold, and minimum size described in
+.BR fkstring (3).
+Neither changes the contents or length of
+.IR fks .
+.PP
+Both do nothing to an empty
+.BR fkstring ,
+which never has a buffer.
+To preallocate a new string, use
+.BR fkalloc (3).
+.SH RETURN VALUE
+.IR fks ,
+or NULL if
+.I fks
+is NULL.
+.SH ERRORS
+These functions do not return on allocation failure, nor when
+.BR fkstrlen ( fks )\~+\~ \fIn\fP\~+\~1
+overflows
+.BR size_t ;
+see
+.BR fkstring (3).
+.SH NOTES
+Slack is not permanent.
+A later
+.BR fkstrtrunc (3),
+.BR fkremove (3),
+or trim that leaves the buffer past the shrink threshold returns
+the memory.
+.PP
+Either function may move the buffer, invalidating pointers into it.
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("Log:");
+\&
+fkslack(s, 4096);            /* one realloc() here... */
+for (i = 0; i < n; i++)
+    fkstrcatf(s, " %d", v[i]);  /* ...and none while it fits */
+fkfit(s);
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkalloc (3),
+.BR fkstrtrunc (3)

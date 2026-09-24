@@ -1,0 +1,47 @@
+.TH FKSTRWRITE 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrwrite \- write an fkstring to a file descriptor
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "ssize_t fkstrwrite(int " fd ", const fkstring *" fks );
+.fi
+.SH DESCRIPTION
+.BR fkstrwrite ()
+writes the contents of
+.IR fks ,
+including any embedded NUL bytes, to the file descriptor
+.I fd
+with a single call to
+.BR write (2).
+If
+.I fks
+is NULL or empty, it makes a zero-length
+.BR write (2).
+.SH RETURN VALUE
+The return value of
+.BR write (2):
+the number of bytes written, or \-1 with
+.I errno
+set.
+.SH ERRORS
+See
+.BR write (2).
+.SH NOTES
+Like
+.BR write (2),
+.BR fkstrwrite ()
+may write fewer bytes than
+.BR fkstrlen ( fks ),
+for example to a pipe or socket, or when interrupted by a signal.
+It does not retry.
+.SH SEE ALSO
+.BR write (2),
+.BR fkstring (3),
+.BR fkstrread (3),
+.BR fkcat (3)

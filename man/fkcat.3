@@ -1,0 +1,107 @@
+.TH FKCAT 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkcatfd, fkcatf, fkcat \- copy a file to a file descriptor or stream
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "ssize_t fkcatfd(const char *" path ", int " fd );
+.BI "ssize_t fkcatf(const char *" path ", FILE *" f );
+.PP
+.BI "ssize_t fkcat(const char *" path );
+.fi
+.SH DESCRIPTION
+.BR fkcatfd ()
+copies the contents of the file named by
+.I path
+to the file descriptor
+.IR fd .
+.BR fkcatf ()
+copies them to the stream
+.IR f .
+.BR fkcat ()
+is a macro equivalent to
+.IR fkcatfd(path,\~STDOUT_FILENO) .
+.PP
+No
+.B fkstring
+is built: the file is copied through a single 64\~KiB buffer
+.RI ( _catbufsize ),
+so memory use does not depend on its size.
+Embedded NUL bytes are copied unchanged.
+Reads interrupted by a signal
+.RB ( EINTR )
+are retried, and so are short writes to
+.IR fd .
+.PP
+.BR fkcatf ()
+writes with
+.BR fwrite (3),
+so its output follows anything already buffered in
+.IR f ,
+and may still be in that buffer when it returns; call
+.BR fflush (3)
+if that matters.
+.BR fkcatfd ()
+bypasses stdio.
+Before mixing it with stdio output to the same descriptor, such as
+.BR fkcat ()
+after
+.BR printf (3),
+call
+.I fflush(stdout)
+or the output can appear out of order.
+.SH RETURN VALUE
+The number of bytes copied, or
+.B SSIZE_MAX
+if that is larger.
+On error, these functions return \-1 with
+.I errno
+set.
+Bytes copied before the error remain written.
+.SH ERRORS
+.TP
+.B EINVAL
+.I path
+is NULL, or, for
+.BR fkcatf (),
+.I f
+is NULL.
+.TP
+.B EISDIR
+.I path
+is a directory.
+.PP
+These functions can also fail with any error of
+.BR open (2),
+.BR read (2),
+or, for
+.BR fkcatfd (),
+.BR write (2).
+.PP
+They do not return on allocation failure; see
+.BR fkstring (3).
+.SH NOTES
+.I path
+is opened with
+.BR O_CLOEXEC .
+.PP
+Copying a file that never ends, such as
+.IR /dev/zero ,
+does not return unless a write fails, but, unlike
+.BR fkslurp (3),
+it does not exhaust memory.
+.SH EXAMPLES
+.EX
+if (fkcat("/etc/hostname") < 0)
+    perror("/etc/hostname");
+.EE
+.SH SEE ALSO
+.BR cat (1),
+.BR fkstring (3),
+.BR fkslurp (3),
+.BR fkstrwrite (3)

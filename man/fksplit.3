@@ -1,0 +1,67 @@
+.TH FKSPLIT 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fksplit, fkarraydestroy \- split an fkstring on a delimiter byte
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring **fksplit(const fkstring *" src ", char " delim );
+.BI "void fkarraydestroy(fkstring **" fka );
+.fi
+.SH DESCRIPTION
+.BR fksplit ()
+splits
+.I src
+at every occurrence of the byte
+.IR delim ,
+which is not included in the parts.
+It returns a newly allocated array of new
+.BR fkstring s,
+terminated by a NULL pointer.
+.PP
+Every delimiter separates two parts, so
+.I n
+delimiters always yield
+.IR n "\~+\~1"
+parts, some of which may be empty:
+\(dqa,,b\(dq yields \(dqa\(dq, \(dq\(dq, and \(dqb\(dq, and an empty
+.I src
+yields a single empty part.
+.I src
+is not modified.
+.PP
+.BR fkarraydestroy ()
+frees every
+.B fkstring
+in the NULL-terminated array
+.IR fka ,
+then the array itself.
+A NULL
+.I fka
+is ignored.
+.SH RETURN VALUE
+.BR fksplit ()
+returns the array, or NULL if
+.I src
+is NULL.
+.SH ERRORS
+.BR fksplit ()
+does not return on allocation failure; see
+.BR fkstring (3).
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("a,b,c");
+fkstring **parts = fksplit(s, \(aq,\(aq);    /* {"a", "b", "c", NULL} */
+\&
+for (size_t i = 0; parts[i] != NULL; i++)
+    puts(fkcstr(parts[i]));
+fkarraydestroy(parts);
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkjoin (3),
+.BR fksubstr (3)

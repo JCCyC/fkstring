@@ -1,0 +1,79 @@
+.TH FKSTRREAD 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrread \- read from a file descriptor into a new fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkstrread(int " fd ", size_t " count );
+.fi
+.SH DESCRIPTION
+.BR fkstrread ()
+reads up to
+.I count
+bytes from the file descriptor
+.I fd
+with a single call to
+.BR read (2),
+and returns what was read as a new
+.BR fkstring .
+Embedded NUL bytes are preserved.
+.PP
+A buffer of
+.IR count "\~+\~1"
+bytes is allocated before reading, whatever the amount actually read.
+.SH RETURN VALUE
+A new
+.BR fkstring .
+It is empty at end of file, or when
+.I count
+is 0.
+On error,
+.BR fkstrread ()
+returns NULL, with
+.I errno
+set by
+.BR read (2).
+.SH ERRORS
+See
+.BR read (2).
+.BR fkstrread ()
+does not return on allocation failure; see
+.BR fkstring (3).
+.SH NOTES
+Like
+.BR read (2),
+.BR fkstrread ()
+may return fewer bytes than requested even before end of file, and does
+not retry when interrupted by a signal.
+To read to end of file, use
+.BR fkslurp (3);
+to read a line, use
+.BR fkreadline (3).
+.PP
+Because the full buffer is allocated up front, a large
+.I count
+costs memory even when little data is available.
+The buffer is not shrunk to fit afterwards; use
+.BR fkfit (3)
+if that matters.
+.SH EXAMPLES
+.EX
+fkstring *s;
+\&
+while ((s = fkstrread(fd, 4096)) != NULL && fkstrlen(s) > 0) {
+    process(s);
+    fkstrdestroy(s);
+}
+fkstrdestroy(s);
+.EE
+.SH SEE ALSO
+.BR read (2),
+.BR fkstring (3),
+.BR fkstrwrite (3),
+.BR fkslurp (3),
+.BR fkreadline (3)

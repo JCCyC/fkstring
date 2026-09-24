@@ -1,0 +1,76 @@
+.TH FKSTRFIND 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrfind, fkstrfindc \- find a substring in an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "size_t fkstrfind(const fkstring *" hay ", const fkstring *" needle ,
+.BI "                 size_t " start );
+.BI "size_t fkstrfindc(const fkstring *" hay ", const char *" needle ,
+.BI "                  size_t " start );
+.fi
+.SH DESCRIPTION
+.BR fkstrfind ()
+finds the first occurrence of
+.I needle
+in
+.I hay
+that begins at or after byte offset
+.IR start .
+.BR fkstrfindc ()
+does the same with a NUL-terminated
+.IR needle ;
+.I hay
+is still searched in full, past any embedded NUL bytes.
+.PP
+Matches may span embedded NUL bytes, but never include the terminating
+NUL at
+.IR cstr [ len ].
+.PP
+An empty
+.I needle
+matches at
+.I start
+itself, provided
+.I start
+is not greater than
+.BR fkstrlen ( hay ),
+as with C++'s
+.BR std::string::find .
+.SH RETURN VALUE
+The byte offset of the match within
+.IR hay ,
+or
+.B FKSTR_NPOS
+if there is none, if
+.I start
+is past the end of
+.IR hay ,
+or if either pointer argument is NULL.
+.SH NOTES
+The search uses
+.BR memmem (3)
+where it is available, and a portable
+.BR memchr (3)
+and
+.BR memcmp (3)
+loop otherwise.
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("aXbXXc");
+size_t    pos;
+\&
+for (pos = fkstrfindc(s, "X", 0); pos != FKSTR_NPOS;
+     pos = fkstrfindc(s, "X", pos + 1))
+    printf("%zu\en", pos);   /* 1, 3, 4 */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkstrchr (3),
+.BR fkreplace (3),
+.BR memmem (3)

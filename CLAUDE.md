@@ -35,6 +35,16 @@ LGPL-2.1 licensed.
   libc dynamically, so the same binary serves both targets: it needs no
   libtool wrapper script and Valgrind can still intercept `malloc()`. Exits
   nonzero on any test failure, leak, or memory error.
+- Man pages: `man/*.3`, English only for now, in `man(7)` macros (not
+  `mdoc`), installed via `dist_man3_MANS` in `Makefile.am`. There's one full
+  page per function group, following the `test_<fn>.c` grouping, plus the
+  `fkstring(3)` overview (type, invariants, tunables, `DIAGNOSTICS`). Every
+  other public name is a one-line `.so man3/<page>.3` stub. Preview with
+  `man -l man/<page>.3`. `make check` also runs `tests/manpages.sh`, which
+  fails if a function or macro in `fkstring.h` has no page, a page is
+  missing from `dist_man3_MANS`, a stub's target doesn't list its name
+  under `NAME`, or `groff -man -ww` warns. Bump the `.TH` date on any page
+  you edit.
 - Release tarball: `make dist`; `make distcheck` also verifies a VPATH
   build, `make check` and install/uninstall from it.
 
@@ -180,7 +190,8 @@ Cross-cutting conventions a change should preserve:
 A backlog of proposed additions, numbered so a session can be asked to "do
 Future feature #N". When one is implemented, remove its entry here (and
 renumber nothing — gaps are fine), add tests per the one-`test_<fn>.c`-per-
-function convention, and document it in `README.md`. Items are ordered
+function convention, and document it in `README.md` and in a man page
+(a new group page or a `.so` stub, listed in `dist_man3_MANS`). Items are ordered
 roughly by usefulness (#1 comparison, #2 search, #3 formatted append, #4
 join, #5 insert, #6 replace, #7 capacity control, #10 line reading and
 #11 whole-file reads are done; `fkcat*` was added outside the backlog); the top remaining one is #8, character-set trims.

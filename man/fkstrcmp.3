@@ -1,0 +1,90 @@
+.TH FKSTRCMP 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrcmp, fkstrcasecmp, fkstreq \- compare fkstrings
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "int fkstrcmp(const fkstring *" a ", const fkstring *" b );
+.BI "int fkstrcasecmp(const fkstring *" a ", const fkstring *" b );
+.BI "int fkstreq(const fkstring *" a ", const fkstring *" b );
+.fi
+.SH DESCRIPTION
+.BR fkstrcmp ()
+compares
+.I a
+and
+.I b
+byte by byte, as
+.B unsigned char
+values like
+.BR memcmp (3),
+over the length of the shorter string.
+If those bytes are equal, the shorter string sorts first.
+Unlike
+.BR strcmp (3)
+on the
+.I cstr
+fields, it compares past embedded NUL bytes, and it is safe on empty
+strings.
+.PP
+.BR fkstrcasecmp ()
+is like
+.BR fkstrcmp (),
+but treats the ASCII letters
+.BR A \(en Z
+as
+.BR a \(en z .
+Unlike
+.BR strcasecmp (3),
+it does not depend on the locale, and bytes outside the ASCII range are
+never folded.
+.PP
+A NULL argument sorts before any
+.BR fkstring ,
+including an empty one; two NULL arguments compare equal.
+.PP
+.BR fkstreq ()
+tests
+.I a
+and
+.I b
+for equality.
+When their lengths differ it returns at once, without reading their
+contents.
+Two NULL arguments are equal; NULL never equals an
+.BR fkstring .
+.SH RETURN VALUE
+.BR fkstrcmp ()
+and
+.BR fkstrcasecmp ()
+return \-1, 0, or 1 as
+.I a
+sorts before, the same as, or after
+.IR b .
+Unlike
+.BR strcmp (3),
+the result is always one of these three values.
+.PP
+.BR fkstreq ()
+returns 1 if
+.I a
+and
+.I b
+have the same length and contents, and 0 otherwise.
+.SH EXAMPLES
+.EX
+fkstring *a = fkstrnew("Hello"), *b = fkstrnew("hello");
+\&
+fkstreq(a, b);        /* 0 */
+fkstrcmp(a, b);       /* \-1: \(aqH\(aq (0x48) < \(aqh\(aq (0x68) */
+fkstrcasecmp(a, b);   /* 0 */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkstartswith (3),
+.BR memcmp (3)

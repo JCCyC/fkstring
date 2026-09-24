@@ -1,0 +1,79 @@
+.TH FKREPLACE 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkreplace, fkreplacec \- replace substrings of an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkreplace(fkstring *" fks ", const fkstring *" old ,
+.BI "                    const fkstring *" new ", size_t " max_count );
+.BI "fkstring *fkreplacec(fkstring *" fks ", const char *" old ,
+.BI "                    const char *" new ", size_t " max_count );
+.fi
+.SH DESCRIPTION
+.BR fkreplace ()
+replaces occurrences of
+.I old
+in
+.I fks
+with
+.IR new ,
+in place.
+.BR fkreplacec ()
+does the same with NUL-terminated
+.I old
+and
+.IR new ;
+.I fks
+is still searched in full, past any embedded NUL bytes.
+.PP
+.I fks
+is scanned from left to right.
+Matches do not overlap (\(dqaaa\(dq contains one \(dqaa\(dq), and
+replacement text is never scanned again.
+At most
+.I max_count
+matches are replaced, or all of them if
+.I max_count
+is 0.
+An empty
+.I old
+matches nothing, so the call changes nothing.
+.PP
+The matches are counted before anything is changed, so
+.I fks
+is reallocated at most once however many there are,
+and not at all when there are none.
+.I old
+and
+.I new
+may be
+.I fks
+itself, or point into its buffer.
+.SH RETURN VALUE
+.IR fks ,
+or NULL, leaving
+.I fks
+unchanged, if any argument is NULL.
+.SH ERRORS
+These functions do not return on allocation failure, nor when the
+resulting length overflows
+.BR size_t ;
+see
+.BR fkstring (3).
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("a\-b\-c");
+\&
+fkreplacec(s, "\-", ", ", 0);   /* "a, b, c" */
+fkreplacec(s, ", ", "", 1);    /* "ab, c" */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkstrfind (3),
+.BR fkinsert (3),
+.BR fkremove (3)

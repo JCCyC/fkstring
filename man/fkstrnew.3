@@ -1,0 +1,88 @@
+.TH FKSTRNEW 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrnew, fkstrnewb, fkstrdup, fkstrdestroy \- create, copy, and destroy fkstrings
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkstrnew(const char *" s );
+.BI "fkstring *fkstrnewb(const void *" buf ", size_t " len );
+.BI "fkstring *fkstrdup(const fkstring *" fks );
+.PP
+.BI "void fkstrdestroy(fkstring *" fks );
+.fi
+.SH DESCRIPTION
+.BR fkstrnew ()
+creates an
+.B fkstring
+holding a copy of the NUL-terminated string
+.IR s .
+If
+.I s
+is NULL or empty, the result is an empty
+.BR fkstring .
+.PP
+.BR fkstrnewb ()
+creates an
+.B fkstring
+holding a copy of the
+.I len
+bytes at
+.IR buf .
+The bytes need not be NUL-terminated and may include NUL bytes,
+which become part of the string; use it for binary data.
+If
+.I buf
+is NULL or
+.I len
+is 0, the result is an empty
+.BR fkstring .
+.PP
+.BR fkstrdup ()
+creates an
+.B fkstring
+holding a copy of
+.IR fks ,
+embedded NUL bytes included.
+.PP
+.BR fkstrdestroy ()
+frees
+.I fks
+and its buffer.
+As with
+.BR free (3),
+.I fks
+must not be used afterwards, and a NULL
+.I fks
+is ignored.
+.SH RETURN VALUE
+.BR fkstrnew ()
+and
+.BR fkstrnewb ()
+return a new
+.BR fkstring .
+.BR fkstrdup ()
+returns a new
+.BR fkstring ,
+or NULL if
+.I fks
+is NULL.
+.PP
+The new buffer is sized for future growth (see
+.BR fkstring (3)),
+so
+.I alloc
+is usually larger than
+.IR len "\~+\~1."
+.SH ERRORS
+These functions do not return on allocation failure; see
+.BR fkstring (3).
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkalloc (3),
+.BR fksprintf (3),
+.BR fksubstr (3)

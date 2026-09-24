@@ -1,0 +1,113 @@
+.TH FKSLURP 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkslurp, fkslurpfile \- read a whole file into a new fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkslurp(int " fd );
+.BI "fkstring *fkslurpfile(const char *" path );
+.fi
+.SH DESCRIPTION
+.BR fkslurp ()
+reads everything from the file descriptor
+.IR fd ,
+from its current offset to end of file, and returns it as a new
+.BR fkstring .
+Embedded NUL bytes are preserved.
+Reads interrupted by a signal
+.RB ( EINTR )
+are retried.
+.PP
+.BR fkslurpfile ()
+opens
+.I path
+for reading, reads it with
+.BR fkslurp (),
+and closes it again.
+.PP
+For a regular file, the size reported by
+.BR fstat (2),
+less the current offset, sets the size of the first buffer, so the file
+is normally read into a single allocation.
+The size is only a hint: reading always continues until
+.BR read (2)
+reports end of file, so a file that grows while it is being read, or a
+.I /proc
+file that reports a size of 0, is still read in full.
+Pipes, sockets, and terminals give no hint; for them, reading starts with
+a 4096-byte buffer
+.RI ( _slurptry )
+that grows as described in
+.BR fkstring (3).
+.PP
+If the data fills much less of the buffer than was allocated, the excess
+is released, by the same rule as
+.BR fkstrtrunc (3).
+.SH RETURN VALUE
+A new
+.BR fkstring ,
+which is empty if there was nothing to read.
+.PP
+On error, these functions return NULL with
+.I errno
+set, and any bytes already read are discarded.
+.BR fkslurpfile ()
+also returns NULL if
+.I path
+is NULL, without changing
+.IR errno .
+.SH ERRORS
+.BR fkslurp ()
+can fail with any error of
+.BR read (2),
+including
+.B EAGAIN
+on a nonblocking descriptor with no data ready.
+.BR fkslurpfile ()
+can also fail with any error of
+.BR open (2).
+.PP
+Neither returns on allocation failure; see
+.BR fkstring (3).
+.SH NOTES
+.BR fkslurpfile ()
+opens
+.I path
+with
+.BR O_CLOEXEC .
+.SH BUGS
+Both functions read until end of file, and some files never end.
+Do not use them on
+.IR /dev/zero ,
+.IR /dev/urandom ,
+a pipe from
+.BR yes (1),
+or anything else that never reports end of file: the buffer grows until
+memory runs out, and the process is terminated by the library or, sooner,
+by the system.
+Use
+.BR fkstrread (3)
+with an explicit byte count, or
+.BR fkcat (3),
+instead.
+.SH EXAMPLES
+.EX
+fkstring *conf = fkslurpfile("/etc/hostname");
+\&
+if (conf == NULL)
+    perror("/etc/hostname");
+else
+    fkstrwrite(STDOUT_FILENO, conf);
+fkstrdestroy(conf);
+.EE
+.SH SEE ALSO
+.BR read (2),
+.BR fkstring (3),
+.BR fkstrread (3),
+.BR fkreadline (3),
+.BR fkcat (3)

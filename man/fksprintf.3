@@ -1,0 +1,129 @@
+.TH FKSPRINTF 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fksprintf, fkvsprintf, fkstrcatf, fkstrcatvf \- formatted output to an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fksprintf(const char *" fmt ", ...);"
+.BI "fkstring *fkvsprintf(const char *" fmt ", va_list " ap );
+.PP
+.BI "fkstring *fkstrcatf(fkstring *" dst ", const char *" fmt ", ...);"
+.BI "fkstring *fkstrcatvf(fkstring *" dst ", const char *" fmt ", va_list " ap );
+.fi
+.SH DESCRIPTION
+These functions format their arguments under the control of
+.I fmt
+as
+.BR printf (3)
+does.
+.BR fksprintf ()
+and
+.BR fkvsprintf ()
+return the output as a new
+.BR fkstring .
+.BR fkstrcatf ()
+and
+.BR fkstrcatvf ()
+append it to
+.I dst
+in place.
+.PP
+The output is written directly into
+.IR dst 's
+buffer, after its current contents.
+If it fits in the space already allocated, nothing is reallocated.
+Otherwise
+.I dst
+grows once, by the bump factor described in
+.BR fkstring (3),
+and the output is formatted a second time.
+Formatting into an empty string starts from a 48-byte guess
+.RI ( _sprintftry ).
+.PP
+A
+.B %c
+conversion with a zero argument produces an embedded NUL byte, which is
+counted in the length.
+.PP
+.BR fkvsprintf ()
+and
+.BR fkstrcatvf ()
+take a
+.I va_list
+instead of a variable number of arguments, for writing variadic wrappers.
+As with
+.BR vprintf (3),
+the value of
+.I ap
+is indeterminate after the call; pass it to
+.BR va_end (3)
+and do not use it again.
+.SH RETURN VALUE
+.BR fksprintf ()
+and
+.BR fkvsprintf ()
+return a new
+.BR fkstring ,
+or NULL if
+.I fmt
+is NULL.
+.PP
+.BR fkstrcatf ()
+and
+.BR fkstrcatvf ()
+return
+.IR dst ,
+or NULL, leaving
+.I dst
+unchanged, if
+.I dst
+or
+.I fmt
+is NULL.
+.SH ERRORS
+These functions do not return on allocation failure; see
+.BR fkstring (3).
+.SH BUGS
+If
+.BR vsnprintf (3)
+itself fails, these functions terminate the process with the message
+.RB \(dq "Inconsistency in vsnprintf() behavior" \(dq
+instead of returning an error.
+This happens when the output would exceed
+.B INT_MAX
+bytes, or when a
+.B %ls
+or
+.B %lc
+argument cannot be converted in the current locale.
+.PP
+With glibc versions before 2.1, whose
+.BR vsnprintf (3)
+does not report the length needed, output more than ten times longer
+than the first guess fails in the same way.
+.SH EXAMPLES
+.EX
+static void
+logmsg(fkstring *log, const char *fmt, ...)
+{
+    va_list ap;
+\&
+    fkstrcatc(log, "[log] ");
+    va_start(ap, fmt);
+    fkstrcatvf(log, fmt, ap);
+    va_end(ap);
+    fkstrcatone(log, \(aq\en\(aq);
+}
+\&
+fkstring *s = fksprintf("%d items", 3);
+fkstrcatf(s, " at %.2f each", 1.5);   /* "3 items at 1.50 each" */
+.EE
+.SH SEE ALSO
+.BR printf (3),
+.BR fkstring (3),
+.BR fkstrcat (3)

@@ -1,0 +1,75 @@
+.TH FKALLOC 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkalloc, fkcalloc \- create an fkstring of a given length
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkalloc(size_t " size );
+.BI "fkstring *fkcalloc(size_t " nmemb ", size_t " size );
+.fi
+.SH DESCRIPTION
+.BR fkalloc ()
+creates an
+.B fkstring
+whose length is
+.I size
+bytes.
+The content bytes are uninitialized, for the caller to fill in, for example
+with
+.BR memcpy (3)
+or
+.BR read (2)
+into
+.IR fkcstr (s).
+.PP
+.BR fkcalloc ()
+creates an
+.B fkstring
+whose length is
+.IR nmemb "\~*\~" size
+bytes, all set to zero.
+They count as embedded NUL bytes, and
+.BR fkstrlen ()
+includes them.
+.PP
+In both cases the byte at offset
+.I len
+is a NUL terminator, and a length of 0 yields an empty
+.B fkstring
+with no buffer.
+.PP
+These are the way to preallocate a string: calling
+.BR fkslack (3)
+on an empty
+.B fkstring
+does nothing.
+.SH RETURN VALUE
+A new
+.BR fkstring .
+.SH ERRORS
+These functions do not return on allocation failure.
+Unlike
+.BR calloc (3),
+.BR fkcalloc ()
+does not return NULL when
+.IR nmemb "\~*\~" size
+overflows; it terminates the process, as described in
+.BR fkstring (3).
+.SH EXAMPLES
+.EX
+fkstring *s = fkalloc(n);
+ssize_t   got = read(fd, fkcstr(s), n);
+\&
+if (got >= 0)
+    fkstrtrunc(s, got);   /* keep what was read */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkstrnew (3),
+.BR fkslack (3),
+.BR fkstrtrunc (3)

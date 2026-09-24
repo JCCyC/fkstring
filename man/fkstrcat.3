@@ -1,0 +1,83 @@
+.TH FKSTRCAT 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrcat, fkstrcatc, fkstrcatone \- append to an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkstrcat(fkstring *" dst ", const fkstring *" src );
+.BI "fkstring *fkstrcatc(fkstring *" dst ", const char *" src );
+.BI "fkstring *fkstrcatone(fkstring *" dst ", char " c );
+.fi
+.SH DESCRIPTION
+These functions append to
+.I dst
+in place.
+.BR fkstrcat ()
+appends the
+.B fkstring
+.IR src ,
+including any embedded NUL bytes.
+.BR fkstrcatc ()
+appends the NUL-terminated string
+.IR src ;
+a NULL or empty
+.I src
+leaves
+.I dst
+unchanged.
+.BR fkstrcatone ()
+appends the single byte
+.IR c ,
+which may be
+.BR \(aq\e0\(aq .
+.PP
+When
+.I dst
+has no room left, its buffer grows by the bump factor described in
+.BR fkstring (3),
+so a sequence of appends reallocates only occasionally.
+.PP
+.I src
+may be
+.I dst
+itself, or point into
+.IR dst 's
+buffer:
+.I fkstrcat(s,\~s)
+doubles
+.IR s .
+.SH RETURN VALUE
+.IR dst .
+.SH ERRORS
+These functions do not return on allocation failure; see
+.BR fkstring (3).
+.SH BUGS
+Unlike the other functions in the library, these do not check their
+arguments:
+.I dst
+must not be NULL, and neither may the
+.I src
+of
+.BR fkstrcat ().
+.BR fkinsert (3)
+at offset
+.BR fkstrlen ( dst )
+is an equivalent that does check.
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("foo");
+\&
+fkstrcatc(s, "bar");      /* "foobar" */
+fkstrcatone(s, \(aq!\(aq);     /* "foobar!" */
+fkstrcat(s, s);           /* "foobar!foobar!" */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkinsert (3),
+.BR fksprintf (3),
+.BR fkjoin (3)

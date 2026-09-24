@@ -1,0 +1,66 @@
+.TH FKINSERT 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkinsert, fkinsertc \- insert into an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkinsert(fkstring *" fks ", size_t " pos ", const fkstring *" src );
+.BI "fkstring *fkinsertc(fkstring *" fks ", size_t " pos ", const char *" cstr );
+.fi
+.SH DESCRIPTION
+.BR fkinsert ()
+inserts the
+.B fkstring
+.I src
+into
+.I fks
+at byte offset
+.IR pos ,
+in place, moving the bytes from
+.I pos
+onward up to make room.
+.BR fkinsertc ()
+does the same with the NUL-terminated string
+.IR cstr .
+.PP
+.I pos
+may range from 0, which prepends, to
+.BR fkstrlen ( fks ),
+which appends.
+Inserting an empty string does nothing.
+.I src
+may be
+.I fks
+itself, or point into its buffer.
+.PP
+These are the counterparts of
+.BR fkremove (3).
+.SH RETURN VALUE
+.IR fks ,
+or NULL, leaving
+.I fks
+unchanged, if any argument is NULL or
+.I pos
+is greater than
+.BR fkstrlen ( fks ).
+.SH ERRORS
+These functions do not return on allocation failure; see
+.BR fkstring (3).
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("Demon");
+\&
+fkinsertc(s, 3, "oti");   /* "Demotion" */
+fkinsertc(s, 0, "[");     /* "[Demotion" */
+fkinsertc(s, fkstrlen(s), "]");  /* "[Demotion]" */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkstrcat (3),
+.BR fkremove (3),
+.BR fkreplace (3)

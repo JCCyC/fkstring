@@ -1,0 +1,60 @@
+.TH FKSTRTRUNC 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrtrunc \- truncate an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "fkstring *fkstrtrunc(fkstring *" fks ", size_t " newlen );
+.fi
+.SH DESCRIPTION
+.BR fkstrtrunc ()
+shortens
+.I fks
+to its first
+.I newlen
+bytes, in place.
+If
+.I newlen
+is not less than
+.BR fkstrlen ( fks ),
+it does nothing; it never lengthens a string.
+Truncating to 0 frees the buffer, leaving an empty
+.BR fkstring .
+.PP
+Otherwise the buffer is shrunk only when it has become much larger than
+the new length: more than 350%
+.RI ( _deflatefactor )
+of it, and more than 16 bytes
+.RI ( _minalloc ).
+It is then shrunk to
+.IR newlen "\~+\~1"
+bytes, or 16 if that is smaller.
+This hysteresis keeps a string that alternately grows and shrinks from
+being reallocated on every call; see
+.BR fkstring (3).
+.PP
+.BR fkremove (3)
+and the trim functions truncate through
+.BR fkstrtrunc (),
+and shrink the buffer by the same rule.
+.SH RETURN VALUE
+.IR fks ,
+or NULL if
+.I fks
+is NULL.
+.SH ERRORS
+.BR fkstrtrunc ()
+does not return on allocation failure; see
+.BR fkstring (3).
+.SH NOTES
+Shrinking may move the buffer, invalidating pointers into it.
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkremove (3),
+.BR fktrim (3),
+.BR fkslack (3)

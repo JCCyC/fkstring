@@ -1,0 +1,56 @@
+.TH FKREMOVE 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkremove \- delete a range of bytes from an fkstring
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.BI "size_t fkremove(fkstring *" fstr ", size_t " start ", size_t " len );
+.fi
+.SH DESCRIPTION
+.BR fkremove ()
+deletes up to
+.I len
+bytes from
+.I fstr
+starting at byte offset
+.IR start ,
+in place, moving the bytes after them down.
+If fewer than
+.I len
+bytes follow
+.IR start ,
+it deletes through the end of the string.
+.PP
+The buffer is then shrunk by the same rule as
+.BR fkstrtrunc (3).
+.SH RETURN VALUE
+The number of bytes deleted.
+This is 0 if
+.I fstr
+is NULL,
+.I len
+is 0, or
+.I start
+is not less than
+.BR fkstrlen ( fstr ).
+.SH ERRORS
+.BR fkremove ()
+does not return on allocation failure; see
+.BR fkstring (3).
+.SH EXAMPLES
+.EX
+fkstring *s = fkstrnew("Demotion");
+\&
+fkremove(s, 3, 3);      /* returns 3; s is "Demon" */
+fkremove(s, 2, 100);    /* returns 3; s is "De" */
+.EE
+.SH SEE ALSO
+.BR fkstring (3),
+.BR fkinsert (3),
+.BR fkstrtrunc (3),
+.BR fksubstr (3)
