@@ -4,12 +4,16 @@ AM_CFLAGS = -Wall
 
 lib_LTLIBRARIES = libfkstring.la
 libfkstring_la_SOURCES = fkstring.c fkstdio.c fkstrerr.c
+# Libtool's current:revision:age, independent of the package version. On
+# each release: implementation-only changes bump revision; added interfaces
+# bump current and age and zero revision; removed or changed interfaces bump
+# current and zero revision and age.
 libfkstring_la_LDFLAGS = -version-info 0:0:0
 
 # fkstring_internal.h is part of the installed API, not private to the build.
 include_HEADERS = fkstring.h fkstring_internal.h
 
-EXTRA_DIST = LICENSE README.md
+EXTRA_DIST = LICENSE NEWS README.md
 
 # One page per function group plus the fkstring(3) overview; every other
 # public name is a one-line .so stub pointing at its group's page.
@@ -61,6 +65,7 @@ dist_man3_MANS = \
 	man/fkstrread.3 \
 	man/fkstrsize.3 \
 	man/fkstrtrunc.3 \
+	man/fkstrversion.3 \
 	man/fkstrwrite.3 \
 	man/fksubstr.3 \
 	man/fktrim.3 \
@@ -78,6 +83,7 @@ tests_alltests_SOURCES = \
 	tests/test_fkmullen.c \
 	tests/test_fkpanic.c \
 	tests/test_fkstrerr.c \
+	tests/test_fkstrversion.c \
 	tests/test_fkstrnew.c \
 	tests/test_fkalloc.c \
 	tests/test_fkstrdestroy.c \
@@ -105,6 +111,9 @@ tests_alltests_SOURCES = \
 	tests/test_fkcat.c \
 	tests/alltests.c
 tests_alltests_LDADD = libfkstring.la
+# PACKAGE_VERSION reaches this test through DEFS, which object files don't
+# otherwise depend on; recompile it whenever configure regenerates Makefile.
+tests/test_fkstrversion.$(OBJEXT): Makefile
 # Libtool's -static links libfkstring statically but libc dynamically, so the
 # binary runs in place without a wrapper script and Valgrind can still
 # intercept malloc()/free().

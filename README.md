@@ -72,6 +72,30 @@ To use the library in your own project:
 gcc myprog.c -lfkstring -o myprog
 ```
 
+## Versioning
+
+fkstring follows [Semantic Versioning](https://semver.org/). The current
+release is 0.9.0: usable and fully tested, but while the major version is 0
+the API may still change incompatibly between minor releases. `NEWS` lists
+the changes in each release.
+
+`fkstring.h` defines the version your program is compiled against as
+`FKSTRING_VERSION` (a string, e.g. `"0.9.0"`), its components
+`FKSTRING_VERSION_MAJOR`, `_MINOR` and `_PATCH`, and
+`FKSTRING_VERSION_NUMBER` (`major * 10000 + minor * 100 + patch`) for
+preprocessor checks. At run time, `const char *fkstrversion(void)` returns
+the version of the library actually loaded:
+
+```c
+#if FKSTRING_VERSION_NUMBER < 900
+#error "fkstring 0.9.0 or later is required"
+#endif
+```
+
+The shared library's soname (`libfkstring.so.0`) is versioned separately,
+with libtool's `-version-info`, and changes only when the binary interface
+breaks.
+
 ## The fkstring type
 
 ```c

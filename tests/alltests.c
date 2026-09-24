@@ -5,6 +5,7 @@ extern test_suite fkaddlen_suite;
 extern test_suite fkmullen_suite;
 extern test_suite fkpanic_suite;
 extern test_suite fkstrerr_suite;
+extern test_suite fkstrversion_suite;
 extern test_suite fkstrnew_suite;
 extern test_suite fkalloc_suite;
 extern test_suite fkstrdestroy_suite;
@@ -34,6 +35,7 @@ extern test_suite fkcat_suite;
 int main(void)
 {
 	test_suite suites[] = {
+		fkstrversion_suite,
 		fkstrnew_suite,
 		fkalloc_suite,
 		fkstrdestroy_suite,

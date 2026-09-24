@@ -1,0 +1,75 @@
+.TH FKSTRVERSION 3 2026-09-24 "fkstring" "fkstring Library Manual"
+.nh
+.SH NAME
+fkstrversion, FKSTRING_VERSION, FKSTRING_VERSION_MAJOR, FKSTRING_VERSION_MINOR, FKSTRING_VERSION_PATCH, FKSTRING_VERSION_NUMBER \- fkstring library version
+.SH LIBRARY
+fkstring library
+.RI ( libfkstring ,\~ \-lfkstring )
+.SH SYNOPSIS
+.nf
+.B #include <fkstring.h>
+.PP
+.B const char *fkstrversion(void);
+.PP
+.B #define FKSTRING_VERSION_MAJOR
+.B #define FKSTRING_VERSION_MINOR
+.B #define FKSTRING_VERSION_PATCH
+.B #define FKSTRING_VERSION
+.B #define FKSTRING_VERSION_NUMBER
+.fi
+.SH DESCRIPTION
+The fkstring package is versioned as
+.IR major . minor . patch ,
+following Semantic Versioning.
+While
+.I major
+is 0, the API is not yet stable, and any
+.I minor
+release may change it incompatibly.
+.PP
+The macros give the version of the
+.I <fkstring.h>
+a program is compiled against.
+.BR FKSTRING_VERSION_MAJOR ,
+.BR FKSTRING_VERSION_MINOR ,
+and
+.B FKSTRING_VERSION_PATCH
+are integer constants.
+.B FKSTRING_VERSION
+is the same version as a string literal, such as
+.BR \(dq0.9.0\(dq .
+.B FKSTRING_VERSION_NUMBER
+is
+.IR major \~*\~10000\~+\~ minor \~*\~100\~+\~ patch ,
+an integer constant suitable for
+.B #if
+comparisons.
+.PP
+.BR fkstrversion ()
+returns the version of the library the program is running with.
+With a shared library, this can differ from
+.B FKSTRING_VERSION
+if the library was upgraded after the program was built.
+.PP
+The package version is separate from the shared library's
+.I soname
+version
+.RI ( libfkstring.so.0 ),
+which changes only when the library's binary interface does.
+.SH RETURN VALUE
+.BR fkstrversion ()
+returns a pointer to a static string in the same format as
+.BR FKSTRING_VERSION .
+The caller must not modify or free it.
+.SH EXAMPLES
+.EX
+#if FKSTRING_VERSION_NUMBER < 900
+#error "fkstring 0.9.0 or later is required"
+#endif
+\&
+if (strcmp(fkstrversion(), FKSTRING_VERSION) != 0)
+    fprintf(stderr, "built with fkstring %s, running with %s\en",
+            FKSTRING_VERSION, fkstrversion());
+.EE
+.SH SEE ALSO
+.BR fkstring (3)

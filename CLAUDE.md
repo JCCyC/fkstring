@@ -45,6 +45,14 @@ LGPL-2.1 licensed.
   missing from `dist_man3_MANS`, a stub's target doesn't list its name
   under `NAME`, or `groff -man -ww` warns. Bump the `.TH` date on any page
   you edit.
+- Versioning: the package version (SemVer) lives in two places that must
+  agree: `AC_INIT` in `configure.ac` and the `FKSTRING_VERSION*` macros at
+  the top of `fkstring.h` (`fkstrversion()` in `fkstring.c` returns
+  `FKSTRING_VERSION`). `tests/test_fkstrversion.c` fails `make check` if
+  they drift. Bumping it means editing both, `autoreconf -fi`, adding a
+  `NEWS` entry, and tagging `vX.Y.Z`. The libtool `-version-info` in
+  `Makefile.am` is independent (see the comment there): update it per
+  libtool's rules at each release, not per package bump.
 - Release tarball: `make dist`; `make distcheck` also verifies a VPATH
   build, `make check` and install/uninstall from it.
 

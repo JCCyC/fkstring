@@ -1,0 +1,20 @@
+fkstring 0.9.0 (2026-09-24)
+===========================
+
+First versioned release. The API is feature-rich but not yet frozen:
+until 1.0.0, minor releases may change it incompatibly.
+
+* Construction and destruction: fkstrnew, fkstrnewb, fkalloc, fkcalloc,
+  fkstrdup, fkstrdestroy, fkarraydestroy.
+* Editing: fkstrcat, fkstrcatc, fkstrcatone, fkinsert, fkinsertc,
+  fkreplace, fkreplacec, fkstrtrunc, fkremove, fkltrim, fkrtrim, fktrim.
+* Capacity control: fkslack, fkfit.
+* Deriving strings: fksubstr, fksplit, fkjoin.
+* Formatting: fksprintf, fkvsprintf, fkstrcatf, fkstrcatvf.
+* Comparison and search: fkstrcmp, fkstrcasecmp, fkstreq, fkstrfind,
+  fkstrfindc, fkstrchr, fkstrrchr, fkstartswith(c), fkendswith(c).
+* I/O: fkstrwrite, fkstrread, fkreadline, fkslurp, fkslurpfile, fkcatfd,
+  fkcatf, fkcat.
+* Versioning: fkstrversion and the FKSTRING_VERSION* macros.
+* Autotools build, test suite (make check, make memcheck) and man pages
+  for the whole public API.

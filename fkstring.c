@@ -26,6 +26,13 @@ size_t _sprintftry = FKSTR_DEFAULT_SPRINTF_TRY;
 size_t _slurptry = FKSTR_DEFAULT_SLURP_TRY;
 size_t _catbufsize = FKSTR_DEFAULT_CAT_BUFSIZE;
 
+/* The version the library was built as, which may differ from the
+ * FKSTRING_VERSION a program was compiled against. */
+const char *fkstrversion(void)
+{
+	return FKSTRING_VERSION;
+}
+
 void fkstrdestroy(fkstring *fks)
 {
 	if (fks)

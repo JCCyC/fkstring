@@ -7,6 +7,18 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+/*
+ * Package version, following Semantic Versioning. It must match AC_INIT in
+ * configure.ac (make check enforces this). FKSTRING_VERSION_NUMBER is
+ * major * 10000 + minor * 100 + patch, for #if comparisons.
+ */
+#define FKSTRING_VERSION_MAJOR 0
+#define FKSTRING_VERSION_MINOR 9
+#define FKSTRING_VERSION_PATCH 0
+#define FKSTRING_VERSION "0.9.0"
+#define FKSTRING_VERSION_NUMBER \
+	(FKSTRING_VERSION_MAJOR * 10000 + FKSTRING_VERSION_MINOR * 100 + FKSTRING_VERSION_PATCH)
+
 typedef struct _fkstring
 {
 	size_t	len;		/* If len == 0, alloc and cstr MUST be 0 and NULL respectively */
@@ -22,6 +34,7 @@ typedef struct _fkstring
 #define FKSTR_NPOS ((size_t)-1)
 
 /* fkstring.c */
+const char *fkstrversion(void);
 fkstring *fkstrnew(const char *s);
 fkstring *fkstrnewb(const void *buf, size_t len);
 fkstring *fkalloc(size_t size);
